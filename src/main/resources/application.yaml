@@ -17,6 +17,10 @@ management:
 spring:
   jackson:
     default-property-inclusion: NON_NULL
+  cloud:
+    gcp:
+      storage:
+        bucket-name: dev-prj-frontend-apps-tax-reports
 
 # Mongo Configurations
 blockstats:
@@ -42,6 +46,9 @@ blockstats:
       maxConnectionIdleTime: 100000
       socketTimeout: 100000
       coinPricesCollectionName: coin-prices
+  cache:
+    tax-configuration:
+      refreshTime: 300000
 
 # Dex pricing Configurations
 dex:

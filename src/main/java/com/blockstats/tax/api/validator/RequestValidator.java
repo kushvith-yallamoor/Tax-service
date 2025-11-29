@@ -1,14 +1,14 @@
 package com.blockstats.tax.api.validator;
 
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
-import com.blockstats.common.tax.delegate.mongo.entity.TaxConfiguration;
-import com.blockstats.common.tax.delegate.mongo.entity.TaxFinancialYearConfig;
-import com.blockstats.common.tax.delegate.mongo.repository.TaxConfigurationRepository;
+import com.blockstats.common.tax.dto.TaxConfigurationDto;
+import com.blockstats.common.tax.dto.TaxDocumentDto;
+import com.blockstats.common.tax.dto.TaxFinancialYearDto;
+import com.blockstats.common.tax.service.TaxConfigurationService;
 import com.blockstats.commons.exception.InvalidRequestException;
 import com.blockstats.commons.exception.Violation;
 
@@ -18,20 +18,43 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class RequestValidator {
 
-	private final TaxConfigurationRepository taxConfigurationRepository;
+	private static final String FINANCIAL_YEAR = "financialYear";
+	private final TaxConfigurationService taxConfigurationService;
 
-	public TaxFinancialYearConfig validateFinancialYear(String country, String financialYear) {
-		TaxConfiguration taxConfig = taxConfigurationRepository.findByCountry(country).block();
-		if (taxConfig == null) {
-			throw new InvalidRequestException(getViolation("financialYear", "Financial year is invalid"));
-		}
+	public void validateFinancialYear(String country, String financialYear) {
+		TaxConfigurationDto taxConfig = taxConfigurationService.getTaxConfiguration(country);
+		validateTaxConfiguration(taxConfig);
+		TaxFinancialYearDto financialYearDto = taxConfig.getFinancialYears().get(financialYear);
+		validateFinancialYear(financialYearDto);
+	}
 
-		Optional<TaxFinancialYearConfig> financialYearOpt = taxConfig.getFinancialYears().stream()
-				.filter(year -> year.getName().equals(financialYear)).findFirst();
-		if (financialYearOpt.isEmpty()) {
-			throw new InvalidRequestException(getViolation("financialYear", "Financial year is invalid"));
+	public void validateFinancialYearAndDocumentName(String country, String financialYear, String documentName) {
+		TaxConfigurationDto taxConfig = taxConfigurationService.getTaxConfiguration(country);
+		validateTaxConfiguration(taxConfig);
+		TaxFinancialYearDto taxFinancialYear = taxConfig.getFinancialYears().get(financialYear);
+		validateFinancialYear(taxFinancialYear);
+		TaxDocumentDto taxDocument = taxFinancialYear.getDocuments().get(documentName);
+		validateDocument(taxDocument);
+	}
+
+	private void validateTaxConfiguration(TaxConfigurationDto taxConfig) {
+		if (taxConfig == null || !taxConfig.isEnabled()) {
+			throw new InvalidRequestException(getViolation(FINANCIAL_YEAR, "System not support for given country"));
 		}
-		return financialYearOpt.get();
+	}
+
+	private void validateFinancialYear(TaxFinancialYearDto taxFinancialYear) {
+		if (taxFinancialYear == null || !taxFinancialYear.isEnabled()) {
+			throw new InvalidRequestException(
+					getViolation(FINANCIAL_YEAR, "System not support for given financial year"));
+		}
+	}
+
+	private void validateDocument(TaxDocumentDto taxDocument) {
+		if (taxDocument == null) {
+			throw new InvalidRequestException(
+					getViolation(FINANCIAL_YEAR, "System not support for given financial year"));
+		}
 	}
 
 	private Set<Violation> getViolation(String name, String message) {

@@ -16,6 +16,11 @@ spring:
         project-id: dev-prj-frontend-apps
         credentials:
           location: 'classpath:application_default_credentials.json'
+      storage:
+        project-id: dev-prj-frontend-apps
+        bucket-name: dev-prj-frontend-apps-tax-reports
+        credentials:
+          location: 'classpath:application_default_credentials.json'
 # Mongo Configurations
 blockstats:
   userdata:

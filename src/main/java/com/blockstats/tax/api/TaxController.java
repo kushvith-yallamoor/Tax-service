@@ -2,8 +2,8 @@ package com.blockstats.tax.api;
 
 import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
 
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
+import java.util.concurrent.ExecutionException;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,31 +11,34 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.blockstats.common.mongo.userdata.delegate.entity.TaxSummary;
-import com.blockstats.common.mongo.userdata.delegate.repository.TaxSummaryRepository;
 import com.blockstats.common.tax.bo.TaxBO;
-import com.blockstats.common.tax.delegate.mongo.entity.TaxFinancialYearConfig;
+import com.blockstats.common.tax.dto.TaxFinancialYearDto;
 import com.blockstats.common.tax.factory.TaxServiceFactory;
+import com.blockstats.common.tax.service.TaxConfigurationService;
 import com.blockstats.commons.api.authorization.models.AuthorizeUser;
 import com.blockstats.response.TaxResponse;
 import com.blockstats.tax.api.validator.RequestValidator;
-import com.blockstats.tax.mapper.TaxMapper;
+import com.blockstats.tax.service.TaxDocumentService;
+import com.blockstats.tax.service.TaxSummaryService;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * This class expose an API endpoints for tax summary
  */
+@Slf4j
 @RestController
 @RequestMapping("/v1/tax")
 @AllArgsConstructor
 public class TaxController {
 
-	private final TaxServiceFactory taxServiceFactory;
-	private final TaxSummaryRepository taxSummaryRepository;
 	private final RequestValidator requestValidator;
-	private final TaxMapper taxMapper;
+	private final TaxServiceFactory taxServiceFactory;
+	private final TaxSummaryService taxSummaryService;
+	private final TaxDocumentService taxDocumentService;
+	private final TaxConfigurationService taxConfigurationService;
 
 	/**
 	 * 
@@ -43,6 +46,7 @@ public class TaxController {
 	 * @param country
 	 * @param financialYear
 	 * @return TaxResponse
+	 * @throws ExecutionException 
 	 */
 	@GetMapping("/{userId}")
 	@AuthorizeUser
@@ -50,9 +54,7 @@ public class TaxController {
 			@RequestParam(name = "country") String country,
 			@RequestParam(name = "financialYear") String financialYear) {
 		requestValidator.validateFinancialYear(country, financialYear);
-		TaxSummary taxSummary = taxSummaryRepository.findByUserIdAndCountryAndFinancialYear(userId, country, financialYear).block();
-		TaxResponse taxResponse = taxMapper.mapToTaxResponse(taxSummary);
-		return ResponseEntity.ok(taxResponse);
+		return ResponseEntity.ok(taxSummaryService.getTaxSummary(buildTaxBO(userId, country, financialYear)));
 	}
 
 	/**
@@ -61,14 +63,15 @@ public class TaxController {
 	 * @param country
 	 * @param financialYear
 	 * @return String
+	 * @throws ExecutionException 
 	 */
 	@GetMapping("/refersh/{userId}")
 	@AuthorizeUser
 	public ResponseEntity<String> refreshTaxSummary(@PathVariable("userId") String userId,
 			@RequestParam(name = "country") String country,
 			@RequestParam(name = "financialYear") String financialYear) {
-		TaxFinancialYearConfig financialYearConfig = requestValidator.validateFinancialYear(country, financialYear);
-		taxServiceFactory.getTaxService(getTaxBeanName(country)).refreshTaxSummary(buildTaxBO(userId, country, financialYearConfig));
+		requestValidator.validateFinancialYear(country, financialYear);
+		taxServiceFactory.getTaxService(getTaxBeanName(country)).refreshTaxSummary(buildTaxBO(userId, country, financialYear));
 		return ResponseEntity.status(201).body("Tax summary generation is in progress");
 	}
 	
@@ -79,32 +82,33 @@ public class TaxController {
 	 * @param financialYear
 	 * @param response
 	 * @return
+	 * @throws ExecutionException 
 	 */
-	@GetMapping("/report/{userId}")
+	@GetMapping("/document/{userId}")
 	@AuthorizeUser
-	public ResponseEntity<?> downloadReport(@PathVariable("userId") String userId,
+	public void downloadTaxDocument(@PathVariable("userId") String userId,
 			@RequestParam(name = "country") String country,
 			@RequestParam(name = "financialYear") String financialYear,
+			@RequestParam(name = "documentName") String documentName,
 			HttpServletResponse response) {
-		requestValidator.validateFinancialYear(country, financialYear);
+		requestValidator.validateFinancialYearAndDocumentName(country, financialYear, documentName);
 		
-		HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=download.pdf");
-        headers.add("Content-Type", "application/pdf");
-    	return new ResponseEntity<>(null, headers, HttpStatus.OK);
+		TaxBO taxBO = buildTaxBO(userId, country, financialYear);
+		taxBO.setDocumentName(documentName);
+		
+        taxDocumentService.downloadDocument(taxBO, response);
 	}
 
 	private String getTaxBeanName(String country) {
 		return TAX_SERVICE.concat(country);
 	}
 	
-	private TaxBO buildTaxBO(String userId, String country, TaxFinancialYearConfig financialYearConfig) {
+	private TaxBO buildTaxBO(String userId, String country, String financialYear) {
+		TaxFinancialYearDto taxFinancialYear = taxConfigurationService.getTaxFinancialYear(country, financialYear);
 		return TaxBO.builder()
 				.userId(userId)
 				.country(country)
-				.financialYear(financialYearConfig.getName())
-				.startDate(financialYearConfig.getStartDate())
-				.endDate(financialYearConfig.getEndDate())
+				.financialYear(taxFinancialYear)
 				.build();
 	}
 

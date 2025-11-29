@@ -12,7 +12,6 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.blockstats.commons.api.authorization.UserAuthorizationInterceptor;
 import com.blockstats.tax.properties.AppProperties;
 
 import lombok.AllArgsConstructor;
@@ -37,8 +36,9 @@ public class AppConfiguration {
 
             @Override
             public void addInterceptors(final InterceptorRegistry interceptorRegistry) {
-                interceptorRegistry.addInterceptor(new UserAuthorizationInterceptor());
+//                interceptorRegistry.addInterceptor(new UserAuthorizationInterceptor());
             }
         };
     }
+    
 }
