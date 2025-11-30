@@ -67,7 +67,7 @@ public class TaxController {
 	 * @return String
 	 * @throws ExecutionException 
 	 */
-	@GetMapping("/refersh/{userId}")
+	@GetMapping("/refresh/{userId}")
 	@AuthorizeUser
 	public ResponseEntity<String> refreshTaxSummary(@PathVariable("userId") String userId,
 			@RequestParam(name = "country") String country,
