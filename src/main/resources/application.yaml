@@ -1,0 +1,90 @@
+# Application Log Level
+logging:
+  level:
+    com.blockstats: INFO
+    root: ERROR
+#Server configurations
+server:
+  port: 8080 
+  servlet:
+    context-path: /blockstats/taxservice
+management:
+  metrics:
+    mongo:
+      connectionpool:
+        enabled: false
+# Spring Configurations
+spring:
+  jackson:
+    default-property-inclusion: NON_NULL
+
+# Mongo Configurations
+blockstats:
+  userdata:
+    mongodb:
+      prefix: 'mongodb+srv://'
+      key: ${sm://userdata-db-key}
+      connectionPoolMaxSize: 10
+      connectionPoolMinSize: 1
+      minHeartBeatFrequency: 100000
+      maxConnectionIdleTime: 100000
+      socketTimeout: 100000
+      assetHoldingsCollectionName: asset-holdings
+      transactionsCollectionName: transactions
+      taxSummaryCollectionName: tax-summary
+  coinprices:
+    mongodb:
+      prefix: 'mongodb+srv://'
+      key: ${sm://coinprices-db-key}
+      connectionPoolMaxSize: 10
+      connectionPoolMinSize: 5
+      minHeartBeatFrequency: 100000
+      maxConnectionIdleTime: 100000
+      socketTimeout: 100000
+      coinPricesCollectionName: coin-prices
+  cache:
+    tax-configuration:
+      refreshTime: 300000
+
+# Dex pricing Configurations
+dex:
+  enabled: true
+  executor:
+    minThreads: 1
+    maxThreads: 10
+    keepAliveSeconds: 500
+    queueCapacity: 10000
+    awaitTerminationInMillis: 100000
+    threadNamePrefix: dex-price-
+  client:
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
+    connectionTimeOut: 10000
+    socketTimeOut: 10000
+    responseTimeOut: 10000
+    connectionKeepAliveTime: 10000
+  api:
+    dex-pricing-resource: /v1/get-defi-price
+    nativeCurrencies: [ ETH, BNB, CELO, AVAX, DEGEN, FTM, XDAI, MNT, S, POL, VANA, OKB, BTC, ADA, SOL, TON, SUI, SEI, TRX ]
+
+# Wallet Configurations
+wallet:
+  enabled: true
+  executor:
+    minThreads: 1
+    maxThreads: 10
+    keepAliveSeconds: 500
+    queueCapacity: 10000
+    awaitTerminationInMillis: 100000
+    threadNamePrefix: wallet-service-
+  client:
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
+    connectionTimeOut: 10000
+    socketTimeOut: 10000
+    responseTimeOut: 10000
+    connectionKeepAliveTime: 10000
+  api:
+    get-wallets-resource: /v1/wallets/

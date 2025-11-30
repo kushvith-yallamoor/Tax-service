@@ -1,0 +1,35 @@
+# Spring Configuration to load Keys from Secret Manager
+spring:
+  config:
+    import: sm://
+  cloud:
+    gcp:
+      storage:
+        bucket-name: dev-prj-frontend-apps-tax-reports
+# App Configurations
+tax:
+  app:
+    allowed-cross-origin-mapping: '/v1/**'
+    allowed-cross-origins: 'http://localhost:4545,https://frontend-web-uw6myk4s3a-uc.a.run.app,https://beta.blockstats.app'
+# Mongo Configurations
+blockstats:
+  userdata:
+    mongodb:
+      suffix: '?retryWrites=true&w=majority&appName=userdata-dev'
+      replicaSet: blockstats-dev.e4vcwlf.mongodb.net
+      userName: blockstats-dev
+      database: userdata-dev
+  coinprices:
+    mongodb:
+      suffix: '?retryWrites=true&w=majority&appName=blockstats-coinpricing'
+      replicaSet: blockstats-coinpricing.rtf55ca.mongodb.net
+      userName: blockstats-app
+      database: coin-pricing
+
+dex:
+  client:
+    baseUrl: https://defi-pricing-service-594081517864.us-central1.run.app/blockstats/defipricing
+
+wallet:
+  client:
+    baseUrl: https://wallet-service-uw6myk4s3a-uc.a.run.app/blockstats/walletservice

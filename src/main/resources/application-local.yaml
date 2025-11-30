@@ -1,0 +1,45 @@
+# App Configurations
+tax:
+  app:
+    allowed-cross-origin-mapping: '/v1/**'
+    allowed-cross-origins: 'http://localhost:4545,https://frontend-web-uw6myk4s3a-uc.a.run.app,https://beta.blockstats.app'
+# Spring Configuration
+spring:
+  config:
+    import: sm://
+  cloud:
+    gcp:
+      project-id: dev-prj-frontend-apps
+      credentials:
+        location: 'classpath:application_default_credentials.json'
+      secretmanager:
+        project-id: dev-prj-frontend-apps
+        credentials:
+          location: 'classpath:application_default_credentials.json'
+      storage:
+        project-id: dev-prj-frontend-apps
+        bucket-name: dev-prj-frontend-apps-tax-reports
+        credentials:
+          location: 'classpath:application_default_credentials.json'
+# Mongo Configurations
+blockstats:
+  userdata:
+    mongodb:
+      suffix: '?retryWrites=true&w=majority&appName=userdata-dev'
+      replicaSet: blockstats-dev.e4vcwlf.mongodb.net
+      userName: blockstats-dev
+      database: userdata-dev
+  coinprices:
+    mongodb:
+      suffix: '?retryWrites=true&w=majority&appName=blockstats-coinpricing'
+      replicaSet: blockstats-coinpricing.rtf55ca.mongodb.net
+      userName: blockstats-app
+      database: coin-pricing
+
+dex:
+  client:
+    baseUrl: http://localhost:8091/blockstats/defipricing
+
+wallet:
+  client:
+    baseUrl: http://localhost:8092/blockstats/walletservice

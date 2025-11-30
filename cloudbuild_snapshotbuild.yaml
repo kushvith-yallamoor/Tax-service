@@ -1,0 +1,51 @@
+steps:
+  # Step to build tax-service springboot jar
+  - name: 'maven:3-eclipse-temurin-17-alpine'
+    args:
+      - mvn
+      - clean
+      - install
+      - deploy
+      - '-Dversion=$COMMIT_SHA-SNAPSHOT'
+  # Step to build the docker image
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - '-t'
+      - >-
+        us-central1-docker.pkg.dev/$PROJECT_ID/blockstats-artifacts-docker/tax-service:$COMMIT_SHA
+      - .
+  # Step to push the image to artifact registry
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - >-
+        us-central1-docker.pkg.dev/$PROJECT_ID/blockstats-artifacts-docker/tax-service:$COMMIT_SHA
+  # Step to deploy the docker container to cloud run
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    args:
+      - run
+      - deploy
+      - tax-service
+      - '--image'
+      - >-
+        us-central1-docker.pkg.dev/$PROJECT_ID/blockstats-artifacts-docker/tax-service:$COMMIT_SHA
+      - '--region'
+      - us-central1
+      - '--project'
+      - $PROJECT_ID
+      - '--max-instances'
+      - '1'
+      - '--min-instances'
+      - '0'
+      - '--timeout'
+      - '1800'
+      - '--service-account'
+      - 'pubsub-publisher-sa@dev-prj-frontend-apps.iam.gserviceaccount.com'
+      - '--set-env-vars'
+      - 'SPRING_PROFILES_ACTIVE=$_SPRING_ACTIVE_PROFILE'
+    entrypoint: gcloud
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/blockstats-artifacts-docker/tax-service:$COMMIT_SHA'
+options:
+  logging: CLOUD_LOGGING_ONLY
