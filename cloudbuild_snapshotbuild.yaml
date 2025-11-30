@@ -40,6 +40,7 @@ steps:
       - '0'
       - '--timeout'
       - '1800'
+      - '--allow-unauthenticated'
       - '--service-account'
       - 'pubsub-publisher-sa@dev-prj-frontend-apps.iam.gserviceaccount.com'
       - '--set-env-vars'
