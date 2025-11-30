@@ -21,6 +21,11 @@ public class RequestValidator {
 	private static final String FINANCIAL_YEAR = "financialYear";
 	private final TaxConfigurationService taxConfigurationService;
 
+	public void validateCountry(String country) {
+		TaxConfigurationDto taxConfig = taxConfigurationService.getTaxConfiguration(country);
+		validateTaxConfiguration(taxConfig);
+	}
+	
 	public void validateFinancialYear(String country, String financialYear) {
 		TaxConfigurationDto taxConfig = taxConfigurationService.getTaxConfiguration(country);
 		validateTaxConfiguration(taxConfig);
