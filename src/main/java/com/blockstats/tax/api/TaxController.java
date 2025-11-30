@@ -2,6 +2,7 @@ package com.blockstats.tax.api;
 
 import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.blockstats.common.tax.bo.TaxBO;
+import com.blockstats.common.tax.dto.TaxConfigurationDto;
 import com.blockstats.common.tax.dto.TaxFinancialYearDto;
 import com.blockstats.common.tax.factory.TaxServiceFactory;
 import com.blockstats.common.tax.service.TaxConfigurationService;
@@ -97,6 +99,27 @@ public class TaxController {
 		taxBO.setDocumentName(documentName);
 		
         taxDocumentService.downloadDocument(taxBO, response);
+	}
+	
+	@GetMapping("/financial-years/{userId}")
+	@AuthorizeUser
+	public ResponseEntity<List<TaxFinancialYearDto>> getTaxFinancialYears(@PathVariable("userId") String userId,
+			@RequestParam(name = "country") String country) {
+		requestValidator.validateCountry(country);
+		TaxConfigurationDto taxConfiguration = taxConfigurationService.getTaxConfiguration(country);
+		
+		List<TaxFinancialYearDto> taxFinancialYears = taxConfiguration.getFinancialYears().values()
+				.stream()
+				.map(financialYear -> TaxFinancialYearDto.builder()
+						.name(financialYear.getName())
+						.displayName(financialYear.getDisplayName())
+						.enabled(financialYear.isEnabled())
+						.startDate(financialYear.getStartDate())
+						.endDate(financialYear.getEndDate())
+						.build())
+				.toList();
+		
+		return ResponseEntity.ok(taxFinancialYears);
 	}
 
 	private String getTaxBeanName(String country) {
