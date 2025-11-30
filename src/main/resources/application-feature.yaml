@@ -2,6 +2,10 @@
 spring:
   config:
     import: sm://
+  cloud:
+    gcp:
+      storage:
+        bucket-name: dev-prj-frontend-apps-tax-reports
 # App Configurations
 tax:
   app:

@@ -3,7 +3,6 @@ package com.blockstats.tax.service;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.springframework.cloud.gcp.storage.GoogleStorageResource;
 import org.springframework.stereotype.Service;
 
 import com.blockstats.common.tax.bo.TaxBO;
@@ -11,6 +10,7 @@ import com.blockstats.common.tax.dto.TaxDocumentDto;
 import com.blockstats.common.tax.service.AbstractTaxService;
 import com.blockstats.common.tax.service.GcsStorageSpringService;
 import com.blockstats.commons.exception.NoDataFoundException;
+import com.google.cloud.spring.storage.GoogleStorageResource;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;

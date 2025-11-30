@@ -1,0 +1,27 @@
+steps:
+  # Step to build tax-service springboot jar
+  - name: 'maven:3-eclipse-temurin-17-alpine'
+    args:
+      - mvn
+      - clean
+      - install
+      - deploy
+      - '-Dversion=$COMMIT_SHA-SNAPSHOT'
+  # Step to build the docker image
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - '-t'
+      - >-
+        us-central1-docker.pkg.dev/dev-prj-frontend-apps/blockstats-artifacts-docker/tax-service:$COMMIT_SHA
+      - .
+  # Step to push the image to artifact registry
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - >-
+        us-central1-docker.pkg.dev/dev-prj-frontend-apps/blockstats-artifacts-docker/tax-service:$COMMIT_SHA
+images:
+  - 'us-central1-docker.pkg.dev/dev-prj-frontend-apps/blockstats-artifacts-docker/tax-service:$COMMIT_SHA'
+options:
+  logging: CLOUD_LOGGING_ONLY
