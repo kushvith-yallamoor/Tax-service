@@ -2,6 +2,7 @@ package com.blockstats.tax.api;
 
 import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -13,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.blockstats.common.tax.bo.TaxBO;
+import com.blockstats.common.tax.delegate.mongo.entity.UserEntity;
+import com.blockstats.common.tax.delegate.mongo.repository.UserRepository;
 import com.blockstats.common.tax.dto.TaxConfigurationDto;
 import com.blockstats.common.tax.dto.TaxFinancialYearDto;
 import com.blockstats.common.tax.factory.TaxServiceFactory;
@@ -41,6 +44,7 @@ public class TaxController {
 	private final TaxSummaryService taxSummaryService;
 	private final TaxDocumentService taxDocumentService;
 	private final TaxConfigurationService taxConfigurationService;
+	private final UserRepository userRepository;
 
 	/**
 	 * 
@@ -84,6 +88,7 @@ public class TaxController {
 	 * @param financialYear
 	 * @param response
 	 * @return
+	 * @throws IOException 
 	 * @throws ExecutionException 
 	 */
 	@GetMapping("/document/{userId}")
@@ -92,7 +97,7 @@ public class TaxController {
 			@RequestParam(name = "country") String country,
 			@RequestParam(name = "financialYear") String financialYear,
 			@RequestParam(name = "documentName") String documentName,
-			HttpServletResponse response) {
+			HttpServletResponse response) throws IOException {
 		requestValidator.validateFinancialYearAndDocumentName(country, financialYear, documentName);
 		
 		TaxBO taxBO = buildTaxBO(userId, country, financialYear);
@@ -128,10 +133,13 @@ public class TaxController {
 	
 	private TaxBO buildTaxBO(String userId, String country, String financialYear) {
 		TaxFinancialYearDto taxFinancialYear = taxConfigurationService.getTaxFinancialYear(country, financialYear);
+		UserEntity user = userRepository.findByUserId(userId).block();
 		return TaxBO.builder()
 				.userId(userId)
 				.country(country)
 				.financialYear(taxFinancialYear)
+				.currency(user.getPreferredCurrency())
+				.costBasisType(user.getCostBasisType())
 				.build();
 	}
 
