@@ -6,11 +6,11 @@ import static com.blockstats.commons.constants.AppConstants.UNSUPPORTED_OPERATIO
  * This class holds all constants in the application
  */
 public class Constants {
+    public static final String TAX_SERVICE = "TAX_SERVICE_";
+    public static final String TRACKING_CLIENT_CONN_POOL = "TRACKING_CLIENT_CONN_POOL";
+    public static final String TRACKING_WEB_CLIENT = "TRACKING_WEB_CLIENT";
 
-	private Constants() {
-		throw new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE);
-	}
-
-	public static final String TAX_SERVICE = "TAX_SERVICE_";
-
+    private Constants() {
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE);
+    }
 }
