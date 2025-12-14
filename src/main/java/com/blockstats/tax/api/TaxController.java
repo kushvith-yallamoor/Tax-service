@@ -1,6 +1,28 @@
 package com.blockstats.tax.api;
 
+import static com.blockstats.commons.constants.HeaderConstants.*;
+import static com.blockstats.commons.constants.MDCConstants.*;
+import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
+
+import java.net.http.HttpHeaders;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.ExecutionException;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.blockstats.common.tax.bo.TaxBO;
+import com.blockstats.common.tax.delegate.mongo.entity.UserEntity;
+import com.blockstats.common.tax.delegate.mongo.repository.UserRepository;
 import com.blockstats.common.tax.dto.TaxConfigurationDto;
 import com.blockstats.common.tax.dto.TaxFinancialYearDto;
 import com.blockstats.common.tax.factory.TaxServiceFactory;
@@ -16,23 +38,10 @@ import com.blockstats.tax.delegate.CreateInitialStatusRecordDelegate;
 import com.blockstats.tax.delegate.PubSubPublishDelegator;
 import com.blockstats.tax.service.TaxDocumentService;
 import com.blockstats.tax.service.TaxSummaryService;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.MDC;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-
-import static com.blockstats.commons.constants.HeaderConstants.*;
-import static com.blockstats.commons.constants.MDCConstants.*;
-import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
 
 /**
  * This class expose an API endpoints for tax summary
@@ -43,13 +52,14 @@ import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
 @AllArgsConstructor
 public class TaxController {
 
-    private final RequestValidator requestValidator;
-    private final TaxServiceFactory taxServiceFactory;
-    private final TaxSummaryService taxSummaryService;
-    private final TaxDocumentService taxDocumentService;
-    private final TaxConfigurationService taxConfigurationService;
-    private final CreateInitialStatusRecordDelegate createInitialStatusRecordDelegate;
+	private final RequestValidator requestValidator;
+	private final TaxServiceFactory taxServiceFactory;
+	private final TaxSummaryService taxSummaryService;
+	private final TaxDocumentService taxDocumentService;
+	private final TaxConfigurationService taxConfigurationService;
+	private final CreateInitialStatusRecordDelegate createInitialStatusRecordDelegate;
     private final PubSubPublishDelegator pubSubPublishDelegator;
+	private final UserRepository userRepository;
 
     /**
      *
@@ -164,6 +174,7 @@ public class TaxController {
 
     private TaxBO buildTaxBO(HttpHeaders headers, String userId, String country, String financialYear) {
         TaxFinancialYearDto taxFinancialYear = taxConfigurationService.getTaxFinancialYear(country, financialYear);
+        UserEntity user = userRepository.findByUserId(userId).block();
         return TaxBO.builder()
                 .correlationId(headers.getFirst(X_CORRELATION_ID))
                 .clientAppId(headers.getFirst(X_CLIENT_APP_ID))
@@ -171,6 +182,8 @@ public class TaxController {
                 .userId(userId)
                 .country(country)
                 .financialYear(taxFinancialYear)
+                .currency(user.getPreferredCurrency())
+				.costBasisType(user.getCostBasisType())
                 .build();
     }
 
