@@ -97,7 +97,7 @@ public class TaxController {
 			@RequestParam(name = "country") String country,
 			@RequestParam(name = "financialYear") String financialYear,
 			@RequestParam(name = "documentName") String documentName,
-			HttpServletResponse response) throws IOException {
+			HttpServletResponse response) {
 		requestValidator.validateFinancialYearAndDocumentName(country, financialYear, documentName);
 		
 		TaxBO taxBO = buildTaxBO(userId, country, financialYear);
