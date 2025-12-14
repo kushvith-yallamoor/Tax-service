@@ -17,6 +17,11 @@ management:
 spring:
   jackson:
     default-property-inclusion: NON_NULL
+  cloud:
+    gcp:
+      pubsub:
+        publisher:
+          enable-message-ordering: true
 
 # Mongo Configurations
 blockstats:
@@ -45,7 +50,10 @@ blockstats:
   cache:
     tax-configuration:
       refreshTime: 300000
-
+# App Configurations
+tax:
+  app:
+    tracking-service-topic: blockstats-tracking
 # Dex pricing Configurations
 dex:
   enabled: true
@@ -88,3 +96,16 @@ wallet:
     connectionKeepAliveTime: 10000
   api:
     get-wallets-resource: /v1/wallets/
+# Tracking Service HTTP Configurations
+tracking:
+  httpclient:
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
+    connectionTimeOut: 100000
+    socketTimeOut: 100000
+    responseTimeOut: 100000
+    connectionKeepAliveTime: 100000
+  api:
+    client-app-id: Tax_Service
+    tracking-service-resource: /blockstats/trackingservice/v1/tracking/taxsummary

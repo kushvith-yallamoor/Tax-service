@@ -33,3 +33,10 @@ dex:
 wallet:
   client:
     baseUrl: https://wallet-service-uw6myk4s3a-uc.a.run.app/blockstats/walletservice
+# Tracking Service HTTP Configurations
+tracking:
+  httpclient:
+    baseUrl: https://tracking-service-594081517864.us-central1.run.app
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10

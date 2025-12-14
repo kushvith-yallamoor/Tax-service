@@ -1,0 +1,50 @@
+<configuration>
+    <appender name="CONSOLE_LOGS" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
+                <marker>TAXSTATS</marker>
+            </evaluator>
+            <onMismatch>ACCEPT</onMismatch>
+            <onMatch>DENY</onMatch>
+        </filter>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <charset>UTF-8</charset>
+            <pattern>%d || %X{correlationId} || %X{requestId} || %X{createdTime} || %X{userId} || %-5p || %X{source} || %X{sourceType} || %t || %C || %M || %L || %m || %ex ^^%n
+            </pattern>
+        </encoder>
+    </appender>
+    <appender name="CONSOLE_STATS" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
+                <marker>TAXSTATS</marker>
+            </evaluator>
+            <onMismatch>DENY</onMismatch>
+            <onMatch>ACCEPT</onMatch>
+        </filter>
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <charset>UTF-8</charset>
+            <pattern>%d || %X{correlationId} || %X{requestId} || %X{createdTime} || %X{userId} || %marker || %X{source} || %X{sourceType} || %t || %C || %M || %L || %m || %ex ^^%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender" includeCallerData="true">
+        <includeCallerData>true</includeCallerData>
+        <param name="locationInfo" value="true"/>
+        <appender-ref ref="CONSOLE_LOGS"/>
+    </appender>
+
+    <appender name="ASYNC_STATS_CONSOLE" class="ch.qos.logback.classic.AsyncAppender" includeCallerData="true">
+        <includeCallerData>true</includeCallerData>
+        <param name="locationInfo" value="true"/>
+        <appender-ref ref="CONSOLE_STATS"/>
+    </appender>
+
+    <root level="DEBUG">
+        <appender-ref ref="stdout"/>
+    </root>
+    <logger name="com.blockstats" level="DEBUG" additivity="false">
+        <appender-ref ref="ASYNC_CONSOLE"/>
+        <appender-ref ref="ASYNC_STATS_CONSOLE"/>
+    </logger>
+</configuration>
