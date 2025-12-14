@@ -6,7 +6,7 @@ steps:
       - clean
       - install
       - deploy
-      - '-Dversion=$COMMIT_SHA-SNAPSHOT'
+      - '-Dversion=$BRANCH_NAME-SNAPSHOT'
   # Step to build the docker image
   - name: gcr.io/cloud-builders/docker
     args:

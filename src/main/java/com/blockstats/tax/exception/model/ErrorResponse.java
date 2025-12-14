@@ -1,14 +1,10 @@
 package com.blockstats.tax.exception.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * This class used for global error response model
- * 
+ *
  */
 @Getter
 @Setter
@@ -16,7 +12,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ErrorResponse {
-	
-	private String error;
+
+    private String error;
 
 }
