@@ -1,24 +1,5 @@
 package com.blockstats.tax.api;
 
-import static com.blockstats.commons.constants.HeaderConstants.*;
-import static com.blockstats.commons.constants.MDCConstants.*;
-import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
-
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ExecutionException;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.MDC;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.blockstats.common.tax.bo.TaxBO;
 import com.blockstats.common.tax.dto.TaxConfigurationDto;
 import com.blockstats.common.tax.dto.TaxFinancialYearDto;
@@ -26,11 +7,14 @@ import com.blockstats.common.tax.factory.TaxServiceFactory;
 import com.blockstats.common.tax.service.TaxConfigurationService;
 import com.blockstats.commons.api.authorization.models.AuthorizeUser;
 import com.blockstats.commons.constants.StatsConstants;
+import com.blockstats.commons.exception.InvalidRequestException;
+import com.blockstats.commons.exception.RequestProcessingException;
+import com.blockstats.commons.exception.Violation;
 import com.blockstats.commons.stats.StatsCollector;
+import com.blockstats.enums.CostBasisType;
 import com.blockstats.enums.TrackingStatus;
-import com.blockstats.portfolio.service.RequestProcessingException;
-import com.blockstats.portfolio.service.UserPreferencesResponse;
 import com.blockstats.response.TaxResponse;
+import com.blockstats.response.UserPreferencesResponse;
 import com.blockstats.response.tracking.TrackingResponseDTO;
 import com.blockstats.tax.api.validator.RequestValidator;
 import com.blockstats.tax.delegate.CreateInitialStatusRecordDelegate;
@@ -38,10 +22,25 @@ import com.blockstats.tax.delegate.FetchUserPreferenceDelegate;
 import com.blockstats.tax.delegate.PubSubPublishDelegator;
 import com.blockstats.tax.service.TaxDocumentService;
 import com.blockstats.tax.service.TaxSummaryService;
-
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.MDC;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import static com.blockstats.commons.constants.HeaderConstants.*;
+import static com.blockstats.commons.constants.MDCConstants.*;
+import static com.blockstats.tax.constant.Constants.TAX_SERVICE;
 
 /**
  * This class expose an API endpoints for tax summary
@@ -52,12 +51,12 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class TaxController {
 
-	private final RequestValidator requestValidator;
-	private final TaxServiceFactory taxServiceFactory;
-	private final TaxSummaryService taxSummaryService;
-	private final TaxDocumentService taxDocumentService;
-	private final TaxConfigurationService taxConfigurationService;
-	private final CreateInitialStatusRecordDelegate createInitialStatusRecordDelegate;
+    private final RequestValidator requestValidator;
+    private final TaxServiceFactory taxServiceFactory;
+    private final TaxSummaryService taxSummaryService;
+    private final TaxDocumentService taxDocumentService;
+    private final TaxConfigurationService taxConfigurationService;
+    private final CreateInitialStatusRecordDelegate createInitialStatusRecordDelegate;
     private final PubSubPublishDelegator pubSubPublishDelegator;
     private final FetchUserPreferenceDelegate fetchUserPreferenceDelegate;
 
@@ -174,20 +173,31 @@ public class TaxController {
 
     private TaxBO buildTaxBO(HttpHeaders headers, String userId, String country, String financialYear) {
         TaxFinancialYearDto taxFinancialYear = taxConfigurationService.getTaxFinancialYear(country, financialYear);
-        UserPreferencesResponse userPreferencesResponse = this.fetchUserPreferenceDelegate.execute(requestBO);
-        if (Objects.isNull(userPreferencesResponse)) {
-            throw new RequestProcessingException("Invalid User data received");
-        }
-        return TaxBO.builder()
+
+        TaxBO taxBO = TaxBO.builder()
                 .correlationId(headers.getFirst(X_CORRELATION_ID))
                 .clientAppId(headers.getFirst(X_CLIENT_APP_ID))
                 .requestDate(headers.getFirst(X_REQUEST_DATE))
                 .userId(userId)
                 .country(country)
                 .financialYear(taxFinancialYear)
-                .currency(user.getPreferredCurrency())
-				.costBasisType(user.getCostBasisType())
                 .build();
+
+        try {
+            UserPreferencesResponse userPreferencesResponse = this.fetchUserPreferenceDelegate.execute(taxBO);
+            if (Objects.isNull(userPreferencesResponse)) {
+                throw new RequestProcessingException("Invalid User data received");
+            }
+            CostBasisType costBasisType = CostBasisType.fromValue(userPreferencesResponse.getCostBasisType());
+            taxBO.setCostBasisType(costBasisType.value());
+            taxBO.setCurrency(userPreferencesResponse.getPreferredCurrency());
+        } catch (Exception e) {
+            Set<Violation> violations = new HashSet<>();
+            violations.add(new Violation("CostBasisType", "Please Update the CostBasisType in the User Preference."));
+            throw new InvalidRequestException(violations);
+        }
+
+        return taxBO;
     }
 
     private void setMDCInfo(HttpHeaders headers, String userId, String country) {

@@ -109,3 +109,17 @@ tracking:
   api:
     client-app-id: Tax_Service
     tracking-service-resource: /blockstats/trackingservice/v1/tracking/taxsummary
+
+# User Service HTTP Configurations
+user:
+  httpclient:
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
+    connectionTimeOut: 100000
+    socketTimeOut: 100000
+    responseTimeOut: 100000
+    connectionKeepAliveTime: 100000
+  api:
+    client-app-id: Tax_Service
+    user-service-resource: /blockstats/userservice/v1/user/preferences
