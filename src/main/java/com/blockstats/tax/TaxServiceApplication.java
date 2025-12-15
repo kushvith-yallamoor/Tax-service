@@ -1,8 +1,6 @@
 package com.blockstats.tax;
 
-import com.blockstats.tax.properties.AppProperties;
-import com.blockstats.tax.properties.TrackingServiceApiProperties;
-import com.blockstats.tax.properties.TrackingServiceClientProperties;
+import com.blockstats.tax.properties.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration;
@@ -23,7 +21,8 @@ import static com.blockstats.common.mongo.userdata.constants.UserdataMongoBeanNa
                 MongoReactiveDataAutoConfiguration.class, MongoReactiveRepositoriesAutoConfiguration.class
         })
 @EnableReactiveMongoRepositories(basePackages = {"com.blockstats.common.tax.delegate.mongo.repository"}, reactiveMongoTemplateRef = USERDATA_REACTIVE_MONGO_TEMPLATE)
-@EnableConfigurationProperties({AppProperties.class, TrackingServiceApiProperties.class, TrackingServiceClientProperties.class})
+@EnableConfigurationProperties({AppProperties.class, TrackingServiceApiProperties.class, TrackingServiceClientProperties.class,
+        UserServiceClientProperties.class, UserServiceApiProperties.class})
 @EnableAsync
 public class TaxServiceApplication {
 

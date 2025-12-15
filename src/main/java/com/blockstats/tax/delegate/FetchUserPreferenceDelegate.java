@@ -1,39 +1,38 @@
 package com.blockstats.tax.delegate;
 
-import static com.blockstats.commons.constants.HeaderConstants.*;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
-import static org.springframework.http.HttpStatus.OK;
-import static com.blockstats.tax.constant.Constants.USER_WEB_CLIENT;
-import static com.blockstats.tax.constant.Constants.USER_CLIENT_CONN_POOL;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import com.blockstats.common.tax.bo.TaxBO;
+import com.blockstats.commons.exception.NoDataFoundException;
+import com.blockstats.commons.exception.RequestProcessingException;
+import com.blockstats.commons.util.JsonParser;
+import com.blockstats.response.UserPreferencesResponse;
+import com.blockstats.tax.gcp.auth.GCPIdTokenProvider;
+import com.blockstats.tax.properties.UserServiceApiProperties;
+import com.blockstats.tax.properties.UserServiceClientProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import com.blockstats.commons.exception.NoDataFoundException;
-import com.blockstats.commons.exception.RequestProcessingException;
-import com.blockstats.response.UserPreferencesResponse;
-import com.blockstats.tax.gcp.auth.GCPIdTokenProvider;
-import com.blockstats.tax.properties.UserServiceApiProperties;
-import com.blockstats.tax.properties.UserServiceClientProperties;
-import com.fasterxml.jackson.core.JsonParser;
+import java.util.HashMap;
+import java.util.Map;
 
-import lombok.extern.slf4j.Slf4j;
+import static com.blockstats.commons.constants.HeaderConstants.*;
+import static com.blockstats.tax.constant.Constants.USER_CLIENT_CONN_POOL;
+import static com.blockstats.tax.constant.Constants.USER_WEB_CLIENT;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.HttpStatus.OK;
 
 @Repository
 @Slf4j
 public class FetchUserPreferenceDelegate {
-    private final UserServiceApiProperties userServiceApiProperties;
+    private final com.blockstats.tax.properties.UserServiceApiProperties userServiceApiProperties;
     private final WebClient webClient;
     private final PoolingAsyncClientConnectionManager poolingAsyncClientConnectionManager;
     private final GCPIdTokenProvider gcpIdTokenProvider;
-    private final UserServiceClientProperties userServiceClientProperties;
+    private final com.blockstats.tax.properties.UserServiceClientProperties userServiceClientProperties;
 
     public FetchUserPreferenceDelegate(UserServiceApiProperties userServiceApiProperties,
                                        @Qualifier(USER_WEB_CLIENT) WebClient webClient,
@@ -63,7 +62,7 @@ public class FetchUserPreferenceDelegate {
                         .header(AUTHORIZATION, "Bearer " + gcpIdTokenProvider.getIdToken(userServiceClientProperties.getBaseUrl()))
                         .header(X_CORRELATION_ID, taxBO.getCorrelationId())
                         .header(X_CLIENT_APP_ID, userServiceApiProperties.getClientAppId())
-                        .header(X_REQUEST_DATE, taxBO.getRequestedDate())
+                        .header(X_REQUEST_DATE, taxBO.getRequestDate())
                         .exchangeToMono(clientResponse -> clientResponse.toEntity(String.class))
                         .block();
 
@@ -85,7 +84,7 @@ public class FetchUserPreferenceDelegate {
         } else {
             if (NOT_FOUND.value() == response.getStatusCode().value()) {
                 log.error("Response Status:{}", response.getStatusCode().value());
-                throw new NoDataFoundException("");
+                throw new NoDataFoundException("User Preference Not Found.");
             }
             log.error("Fetch Request Status API returned without body");
             throw new RequestProcessingException("Unable to fetch Fetch Request Status Data.");

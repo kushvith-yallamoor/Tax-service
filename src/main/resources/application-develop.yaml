@@ -40,3 +40,10 @@ tracking:
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
+# User Service HTTP Configurations
+user:
+  httpclient:
+    baseUrl: https://user-service-1065610358793.us-east5.run.app
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
