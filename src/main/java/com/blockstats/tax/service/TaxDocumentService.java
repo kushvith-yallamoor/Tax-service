@@ -17,6 +17,8 @@ import java.io.OutputStream;
 @Slf4j
 @Service
 public class TaxDocumentService extends AbstractTaxService {
+	
+	private final GcsStorageSpringService gcsStorageSpringService;
 
 	public TaxDocumentService(TransactionDelegate txnDelegate, 
 			GcsStorageSpringService gcsStorageSpringService) {
