@@ -5,7 +5,7 @@ spring:
   cloud:
     gcp:
       storage:
-        bucket-name: dev-prj-frontend-apps-tax-reports
+        bucket-name: dsit-prj-backend-services-tax-reports
 # App Configurations
 tax:
   app:
