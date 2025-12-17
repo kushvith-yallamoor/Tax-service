@@ -10,7 +10,7 @@ spring:
 tax:
   app:
     allowed-cross-origin-mapping: '/v1/**'
-    allowed-cross-origins: 'https://blockstats.app'
+    allowed-cross-origins: 'https://blockstats.app,https://www.blockstats.app'
 # Mongo Configurations
 blockstats:
   userdata:
