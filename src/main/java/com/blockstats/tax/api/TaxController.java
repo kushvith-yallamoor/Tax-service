@@ -32,6 +32,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -162,6 +163,7 @@ public class TaxController {
                         .startDate(financialYear.getStartDate())
                         .endDate(financialYear.getEndDate())
                         .build())
+                .sorted(Comparator.comparingInt((TaxFinancialYearDto fy) -> Integer.parseInt(fy.getName().substring(2))).reversed())
                 .toList();
 
         return ResponseEntity.ok(taxFinancialYears);
