@@ -1,5 +1,6 @@
 package com.blockstats.tax.exception.handler;
 
+import com.blockstats.commons.exception.ForbiddenException;
 import com.blockstats.commons.exception.InvalidRequestException;
 import com.blockstats.commons.exception.NoDataFoundException;
 import com.blockstats.error.ErrorResponse;
@@ -46,6 +47,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         errorResponse.setErrorDescription("No Data Found Exception.");
         errorResponse.setErrorMessages(List.of(noDataFoundException.getMessage()));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public final ResponseEntity<ErrorResponse> forbiddenException(ForbiddenException forbiddenException) {
+        log.debug(forbiddenException.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setErrorCode(SERVICE_ERROR_00004);
+        errorResponse.setErrorDescription("Unable to retrieve User Details");
+        errorResponse.setErrorMessages(List.of(forbiddenException.getMessage()));
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(Throwable.class)

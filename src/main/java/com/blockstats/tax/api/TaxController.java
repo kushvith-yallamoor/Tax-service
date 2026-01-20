@@ -5,12 +5,14 @@ import com.blockstats.common.tax.dto.TaxConfigurationDto;
 import com.blockstats.common.tax.dto.TaxFinancialYearDto;
 import com.blockstats.common.tax.factory.TaxServiceFactory;
 import com.blockstats.common.tax.service.TaxConfigurationService;
+import com.blockstats.commons.api.authorization.bean.UserContext;
 import com.blockstats.commons.api.authorization.models.AuthorizeUser;
 import com.blockstats.commons.constants.StatsConstants;
 import com.blockstats.commons.exception.InvalidRequestException;
 import com.blockstats.commons.exception.RequestProcessingException;
 import com.blockstats.commons.exception.Violation;
 import com.blockstats.commons.stats.StatsCollector;
+import com.blockstats.commons.util.AuthUtil;
 import com.blockstats.enums.CostBasisType;
 import com.blockstats.enums.TrackingStatus;
 import com.blockstats.response.TaxResponse;
@@ -22,6 +24,7 @@ import com.blockstats.tax.delegate.FetchUserPreferenceDelegate;
 import com.blockstats.tax.delegate.PubSubPublishDelegator;
 import com.blockstats.tax.service.TaxDocumentService;
 import com.blockstats.tax.service.TaxSummaryService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,11 +35,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import static com.blockstats.commons.constants.HeaderConstants.*;
@@ -63,44 +62,44 @@ public class TaxController {
 
     /**
      *
-     * @param userId
      * @param country
      * @param financialYear
      * @return TaxResponse
      * @throws ExecutionException
      */
-    @GetMapping("/{userId}")
+    @GetMapping
     @AuthorizeUser
-    public ResponseEntity<TaxResponse> getTaxSummary(@PathVariable("userId") String userId,
-                                                     @RequestParam(name = "country") String country,
+    public ResponseEntity<TaxResponse> getTaxSummary(@RequestParam(name = "country") String country,
                                                      @RequestParam(name = "financialYear") String financialYear,
-                                                     @RequestHeader HttpHeaders httpHeaders) {
-        this.setMDCInfo(httpHeaders, userId, country);
+                                                     @RequestHeader HttpHeaders httpHeaders,
+                                                     HttpServletRequest httpServletRequest) {
+        UserContext userContext = AuthUtil.getUserContext(httpServletRequest);
+        this.setMDCInfo(httpHeaders, userContext.getUserId(), country);
         StatsCollector.putInCurrentSession(StatsConstants.EVENT, "GET_TAX_SUMMARY");
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
         requestValidator.validateFinancialYear(country, financialYear);
-        return ResponseEntity.ok(taxSummaryService.getTaxSummary(buildTaxBO(httpHeaders, userId, country, financialYear)));
+        return ResponseEntity.ok(taxSummaryService.getTaxSummary(buildTaxBO(httpHeaders, userContext.getUserId(), country, financialYear)));
     }
 
     /**
      *
-     * @param userId
      * @param country
      * @param financialYear
      * @return String
      * @throws ExecutionException
      */
-    @GetMapping("/refresh/{userId}")
+    @GetMapping("/refresh")
     @AuthorizeUser
-    public ResponseEntity<String> refreshTaxSummary(@PathVariable("userId") String userId,
-                                                    @RequestParam(name = "country") String country,
+    public ResponseEntity<String> refreshTaxSummary(@RequestParam(name = "country") String country,
                                                     @RequestParam(name = "financialYear") String financialYear,
-                                                    @RequestHeader HttpHeaders httpHeaders) {
-        this.setMDCInfo(httpHeaders, userId, country);
+                                                    @RequestHeader HttpHeaders httpHeaders,
+                                                    HttpServletRequest httpServletRequest) {
+        UserContext userContext = AuthUtil.getUserContext(httpServletRequest);
+        this.setMDCInfo(httpHeaders, userContext.getUserId(), country);
         StatsCollector.putInCurrentSession(StatsConstants.EVENT, "REFRESH_TAX_SUMMARY");
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
         requestValidator.validateFinancialYear(country, financialYear);
-        TaxBO taxBO = this.buildTaxBO(httpHeaders, userId, country, financialYear);
+        TaxBO taxBO = this.buildTaxBO(httpHeaders, userContext.getUserId(), country, financialYear);
 
         TrackingResponseDTO trackingResponseDTO = this.createInitialStatusRecordDelegate.execute(taxBO);
 
@@ -122,28 +121,28 @@ public class TaxController {
 
     /**
      *
-     * @param userId
      * @param country
      * @param financialYear
      * @param response
      * @return
      * @throws ExecutionException
      */
-    @GetMapping("/document/{userId}")
+    @GetMapping("/document")
     @AuthorizeUser
-    public void downloadTaxDocument(@PathVariable("userId") String userId,
-                                    @RequestParam(name = "country") String country,
+    public void downloadTaxDocument(@RequestParam(name = "country") String country,
                                     @RequestParam(name = "financialYear") String financialYear,
                                     @RequestParam(name = "documentName") String documentName,
                                     @RequestHeader HttpHeaders httpHeaders,
+                                    HttpServletRequest httpServletRequest,
                                     HttpServletResponse response) {
-        this.setMDCInfo(httpHeaders, userId, country);
+        UserContext userContext = AuthUtil.getUserContext(httpServletRequest);
+        this.setMDCInfo(httpHeaders, userContext.getUserId(), country);
         StatsCollector.putInCurrentSession(StatsConstants.EVENT, "DOWNLOAD_TAX_DOCUMENT");
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
         StatsCollector.putInCurrentSession(StatsConstants.FILE_NAME, documentName);
         requestValidator.validateFinancialYearAndDocumentName(country, financialYear, documentName);
 
-        TaxBO taxBO = buildTaxBO(httpHeaders, userId, country, financialYear);
+        TaxBO taxBO = buildTaxBO(httpHeaders, userContext.getUserId(), country, financialYear);
         taxBO.setDocumentName(documentName);
 
         taxDocumentService.downloadDocument(taxBO, response);
