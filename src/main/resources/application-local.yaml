@@ -50,10 +50,17 @@ tracking:
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
-# Tracking Service HTTP Configurations
+# User Service HTTP Configurations
 user:
   httpclient:
     baseUrl: https://user-service-594081517864.us-central1.run.app
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
+# Payment Service HTTP Configurations
+payment:
+  httpclient:
+    baseUrl: https://payment-service-594081517864.us-central1.run.app
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10

@@ -2,6 +2,7 @@ package com.blockstats.tax.configuration;
 
 import com.blockstats.commons.configuration.builder.HttpConnectionPoolBuilder;
 import com.blockstats.commons.configuration.builder.WebClientCreator;
+import com.blockstats.tax.properties.PaymentServiceClientProperties;
 import com.blockstats.tax.properties.TrackingServiceClientProperties;
 import com.blockstats.tax.properties.UserServiceClientProperties;
 import lombok.AllArgsConstructor;
@@ -38,6 +39,17 @@ public class ClientConfiguration {
     public WebClient createUserClient(@Qualifier(USER_CLIENT_CONN_POOL) PoolingAsyncClientConnectionManager connectionManager,
                                       UserServiceClientProperties userServiceClientProperties) {
         return WebClientCreator.createWebClient(userServiceClientProperties, connectionManager);
+    }
+    
+    @Bean(PAYMENT_CLIENT_CONN_POOL)
+    public PoolingAsyncClientConnectionManager createPaymentHttpConnectionPool(PaymentServiceClientProperties paymentServiceClientProperties) {
+        return HttpConnectionPoolBuilder.createPoolingAsyncClientConnectionManager(paymentServiceClientProperties);
+    }
+
+    @Bean(PAYMENT_WEB_CLIENT)
+    public WebClient createPaymentClient(@Qualifier(PAYMENT_CLIENT_CONN_POOL) PoolingAsyncClientConnectionManager connectionManager,
+                                      PaymentServiceClientProperties paymentServiceClientProperties) {
+        return WebClientCreator.createWebClient(paymentServiceClientProperties, connectionManager);
     }
 
 }

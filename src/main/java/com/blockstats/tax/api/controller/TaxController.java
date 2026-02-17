@@ -23,6 +23,8 @@ import com.blockstats.tax.delegate.FetchUserPreferenceDelegate;
 import com.blockstats.tax.delegate.PubSubPublishDelegator;
 import com.blockstats.tax.service.TaxDocumentService;
 import com.blockstats.tax.service.TaxSummaryService;
+import com.blockstats.tax.service.UserSubscriptionValidationService;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -60,6 +62,7 @@ public class TaxController {
     private final CreateInitialStatusRecordDelegate createInitialStatusRecordDelegate;
     private final PubSubPublishDelegator pubSubPublishDelegator;
     private final FetchUserPreferenceDelegate fetchUserPreferenceDelegate;
+    private final UserSubscriptionValidationService userSubscriptionValidationService;
 
     /**
      *
@@ -100,12 +103,10 @@ public class TaxController {
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
         requestValidator.validateFinancialYear(country, financialYear);
         TaxBO taxBO = this.buildTaxBO(httpHeaders, userContext.getUserId(), country, financialYear);
-        // TODO
-        // Step 1 -> Get all the roles which will start with TU.. TU25BASIC
-        // Step 2 -> Implement a cache which gives the data like TU25BASIC -> PlanConfig (txnCount and  Country) -> maxCount is a
-        // Step 3 -> Get Txn Count for the user for FY that is received in the request -> txnCount is b
-        // Step 4 -> a > b || a==b => calculate tax
-        //           a < b => throw InsufficientPlan(give a meaning full name) and staus 402 to be reported to the UI provide the Appropriate plan to buy to generate the report
+        
+        // Validate user subscription
+        userSubscriptionValidationService.validate(userContext, taxBO);
+        
         TrackingResponseDTO trackingResponseDTO = this.createInitialStatusRecordDelegate.execute(taxBO);
 
         if (Objects.isNull(trackingResponseDTO) || CollectionUtils.isEmpty(trackingResponseDTO.getWalletStatuses())) {

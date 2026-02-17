@@ -11,6 +11,10 @@ public class Constants {
     public static final String TRACKING_WEB_CLIENT = "TRACKING_WEB_CLIENT";
     public static final String USER_CLIENT_CONN_POOL = "USER_CLIENT_CONN_POOL";
     public static final String USER_WEB_CLIENT = "USER_WEB_CLIENT";
+    public static final String PAYMENT_CLIENT_CONN_POOL = "PAYMENT_CLIENT_CONN_POOL";
+    public static final String PAYMENT_WEB_CLIENT = "PAYMENT_WEB_CLIENT";
+    public static final String ROLE_POLICY_CACHE = "ROLE_POLICY_CACHE";
+    public static final String ROLE_POLICY_SET_CACHE = "ROLE_POLICY_SET_CACHE";
 
     private Constants() {
         throw new UnsupportedOperationException(UNSUPPORTED_OPERATION_MESSAGE);
