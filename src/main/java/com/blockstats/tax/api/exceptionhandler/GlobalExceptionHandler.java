@@ -1,4 +1,4 @@
-package com.blockstats.tax.exception.handler;
+package com.blockstats.tax.api.exceptionhandler;
 
 import com.blockstats.commons.exception.ForbiddenException;
 import com.blockstats.commons.exception.InvalidRequestException;

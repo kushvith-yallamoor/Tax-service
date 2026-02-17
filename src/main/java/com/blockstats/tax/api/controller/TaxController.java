@@ -1,4 +1,4 @@
-package com.blockstats.tax.api;
+package com.blockstats.tax.api.controller;
 
 import com.blockstats.common.tax.bo.TaxBO;
 import com.blockstats.common.tax.dto.TaxConfigurationDto;
@@ -6,7 +6,6 @@ import com.blockstats.common.tax.dto.TaxFinancialYearDto;
 import com.blockstats.common.tax.factory.TaxServiceFactory;
 import com.blockstats.common.tax.service.TaxConfigurationService;
 import com.blockstats.commons.api.authorization.bean.UserContext;
-import com.blockstats.commons.api.authorization.models.AuthorizeUser;
 import com.blockstats.commons.constants.StatsConstants;
 import com.blockstats.commons.exception.InvalidRequestException;
 import com.blockstats.commons.exception.RequestProcessingException;
@@ -33,6 +32,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -68,7 +69,7 @@ public class TaxController {
      * @throws ExecutionException
      */
     @GetMapping
-    @AuthorizeUser
+    @PreAuthorize("hasRole('ROLE_TU')")
     public ResponseEntity<TaxResponse> getTaxSummary(@RequestParam(name = "country") String country,
                                                      @RequestParam(name = "financialYear") String financialYear,
                                                      @RequestHeader HttpHeaders httpHeaders,
@@ -89,18 +90,22 @@ public class TaxController {
      * @throws ExecutionException
      */
     @GetMapping("/refresh")
-    @AuthorizeUser
+    @PreAuthorize("hasRole('ROLE_TU')")
     public ResponseEntity<String> refreshTaxSummary(@RequestParam(name = "country") String country,
                                                     @RequestParam(name = "financialYear") String financialYear,
                                                     @RequestHeader HttpHeaders httpHeaders,
-                                                    HttpServletRequest httpServletRequest) {
-        UserContext userContext = AuthUtil.getUserContext(httpServletRequest);
+                                                    @AuthenticationPrincipal UserContext userContext) {
         this.setMDCInfo(httpHeaders, userContext.getUserId(), country);
         StatsCollector.putInCurrentSession(StatsConstants.EVENT, "REFRESH_TAX_SUMMARY");
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
         requestValidator.validateFinancialYear(country, financialYear);
         TaxBO taxBO = this.buildTaxBO(httpHeaders, userContext.getUserId(), country, financialYear);
-
+        // TODO
+        // Step 1 -> Get all the roles which will start with TU.. TU25BASIC
+        // Step 2 -> Implement a cache which gives the data like TU25BASIC -> PlanConfig (txnCount and  Country) -> maxCount is a
+        // Step 3 -> Get Txn Count for the user for FY that is received in the request -> txnCount is b
+        // Step 4 -> a > b || a==b => calculate tax
+        //           a < b => throw InsufficientPlan(give a meaning full name) and staus 402 to be reported to the UI provide the Appropriate plan to buy to generate the report
         TrackingResponseDTO trackingResponseDTO = this.createInitialStatusRecordDelegate.execute(taxBO);
 
         if (Objects.isNull(trackingResponseDTO) || CollectionUtils.isEmpty(trackingResponseDTO.getWalletStatuses())) {
@@ -128,7 +133,7 @@ public class TaxController {
      * @throws ExecutionException
      */
     @GetMapping("/document")
-    @AuthorizeUser
+    @PreAuthorize("hasRole('ROLE_TU')")
     public void downloadTaxDocument(@RequestParam(name = "country") String country,
                                     @RequestParam(name = "financialYear") String financialYear,
                                     @RequestParam(name = "documentName") String documentName,
