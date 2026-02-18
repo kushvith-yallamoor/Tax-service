@@ -76,8 +76,7 @@ public class TaxController {
     public ResponseEntity<TaxResponse> getTaxSummary(@RequestParam(name = "country") String country,
                                                      @RequestParam(name = "financialYear") String financialYear,
                                                      @RequestHeader HttpHeaders httpHeaders,
-                                                     HttpServletRequest httpServletRequest) {
-        UserContext userContext = AuthUtil.getUserContext(httpServletRequest);
+                                                     @AuthenticationPrincipal UserContext userContext) {
         this.setMDCInfo(httpHeaders, userContext.getUserId(), country);
         StatsCollector.putInCurrentSession(StatsConstants.EVENT, "GET_TAX_SUMMARY");
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
@@ -139,9 +138,8 @@ public class TaxController {
                                     @RequestParam(name = "financialYear") String financialYear,
                                     @RequestParam(name = "documentName") String documentName,
                                     @RequestHeader HttpHeaders httpHeaders,
-                                    HttpServletRequest httpServletRequest,
+                                    @AuthenticationPrincipal UserContext userContext,
                                     HttpServletResponse response) {
-        UserContext userContext = AuthUtil.getUserContext(httpServletRequest);
         this.setMDCInfo(httpHeaders, userContext.getUserId(), country);
         StatsCollector.putInCurrentSession(StatsConstants.EVENT, "DOWNLOAD_TAX_DOCUMENT");
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
