@@ -17,6 +17,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
@@ -46,8 +47,10 @@ public class AuthorizationRolesSetupFilter extends OncePerRequestFilter {
             return;
         }
 
+        List<GrantedAuthority> grantedAuthorities = new ArrayList<>();
+
         if (CollectionUtils.isNotEmpty(userContext.getRoles())) {
-            List<GrantedAuthority> grantedAuthorities =
+            grantedAuthorities =
                     userContext
                             .getRoles()
                             .stream()
@@ -55,11 +58,11 @@ public class AuthorizationRolesSetupFilter extends OncePerRequestFilter {
                             .map(role -> "ROLE_" + StringUtils.toRootUpperCase(role))
                             .map(SimpleGrantedAuthority::new)
                             .collect(Collectors.toList());
-
-            Authentication authentication = new UsernamePasswordAuthenticationToken(userContext, null, grantedAuthorities);
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userContext, null, grantedAuthorities);
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
     }
