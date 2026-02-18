@@ -138,4 +138,4 @@ payment:
     connectionKeepAliveTime: 100000
   api:
     client-app-id: Tax_Service
-    payment-service-resource: /blockstats/paymentservice/v1/subscriptionplans
+    rolePolicyResource: /blockstats/paymentservice/v1/subscriptionplans/roles

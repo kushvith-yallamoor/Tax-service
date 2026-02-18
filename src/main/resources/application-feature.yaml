@@ -1,3 +1,8 @@
+# Application Log Level
+logging:
+  level:
+    com.blockstats: DEBUG
+    root: ERROR
 # Spring Configuration to load Keys from Secret Manager
 spring:
   config:
