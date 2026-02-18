@@ -29,7 +29,7 @@ public class RolePolicyCacheLoaderService extends CacheLoader<String, Map<String
 
         log.debug("Loading active subscription plans for Type: {} and Country: {}", userType, country);
 
-        RolePolicyResponse rolePolicyResponse = fetchSubscriptionPlansDelegate.execute(PaymentBO.builder().userType(userType).build());
+        RolePolicyResponse rolePolicyResponse = fetchSubscriptionPlansDelegate.execute(PaymentBO.builder().userType(userType).country(country).build());
 
         return Objects.nonNull(rolePolicyResponse) ? rolePolicyResponse.getRolePolicies().stream().collect(Collectors.toMap(RolePolicy::getRole, Function.identity(), (existing, replacement) -> replacement)) : Map.of();
     }
