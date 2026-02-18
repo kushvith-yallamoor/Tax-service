@@ -23,11 +23,16 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.blockstats.commons.constants.HeaderConstants.X_APIGATEWAY_API_USERINFO;
+import static org.springframework.http.HttpMethod.OPTIONS;
 
 public class AuthorizationRolesSetupFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        if (OPTIONS.matches(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String apiGatewayUserContext = request.getHeader(X_APIGATEWAY_API_USERINFO);
         if (StringUtils.isBlank(apiGatewayUserContext)) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());
