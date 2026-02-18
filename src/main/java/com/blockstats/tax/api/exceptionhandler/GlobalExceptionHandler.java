@@ -73,6 +73,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         recommendedPlan.setName(insufficientPlanException.getName());
         recommendedPlan.setPlanId(insufficientPlanException.getPlanId());
         recommendedPlan.setCountry(insufficientPlanException.getCountry());
+        recommendedPlan.setUserTxnCount(insufficientPlanException.getUserTxnCount());
         return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(recommendedPlan);
     }
 

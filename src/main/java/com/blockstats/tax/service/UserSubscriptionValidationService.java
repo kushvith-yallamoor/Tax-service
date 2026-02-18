@@ -51,6 +51,7 @@ public class UserSubscriptionValidationService {
                 throw new InsufficientPlanException(suggested.get().getName(),
                         suggested.get().getPlanId(),
                         suggested.get().getCountry(),
+                        transactionCount,
                         String.format("User has insufficient subscription plan based on their transactions:[%s-%s]",
                                 userContext.getUserId(), transactionCount));
             }
@@ -60,6 +61,7 @@ public class UserSubscriptionValidationService {
                 throw new InsufficientPlanException(rolePolicy.getName(),
                         rolePolicy.getPlanId(),
                         rolePolicy.getCountry(),
+                        transactionCount,
                         String.format("User has insufficient subscription plan based on their transactions:[%s-%s]",
                                 userContext.getUserId(), transactionCount));
             }
