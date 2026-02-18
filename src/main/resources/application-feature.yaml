@@ -47,3 +47,10 @@ user:
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
+# Payment Service HTTP Configurations
+payment:
+  httpclient:
+    baseUrl: https://payment-service-594081517864.us-central1.run.app
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10

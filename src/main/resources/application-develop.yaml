@@ -47,3 +47,10 @@ user:
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
+# Payment Service HTTP Configurations
+payment:
+  httpclient:
+    baseUrl: https://payment-service-1065610358793.us-east5.run.app
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10

@@ -50,6 +50,8 @@ blockstats:
   cache:
     tax-configuration:
       refreshTime: 300000
+    subscription-plans:
+      refreshTime: 300000
 # App Configurations
 tax:
   app:
@@ -123,3 +125,17 @@ user:
   api:
     client-app-id: Tax_Service
     user-service-resource: /blockstats/userservice/v1/user/preferences
+
+# Payment Service HTTP Configurations
+payment:
+  httpclient:
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
+    connectionTimeOut: 100000
+    socketTimeOut: 100000
+    responseTimeOut: 100000
+    connectionKeepAliveTime: 100000
+  api:
+    client-app-id: Tax_Service
+    payment-service-resource: /blockstats/paymentservice/v1/subscriptionplans

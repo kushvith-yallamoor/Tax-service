@@ -1,21 +1,27 @@
 package com.blockstats.tax.api.exceptionhandler;
 
-import com.blockstats.commons.exception.ForbiddenException;
-import com.blockstats.commons.exception.InvalidRequestException;
-import com.blockstats.commons.exception.NoDataFoundException;
-import com.blockstats.error.ErrorResponse;
-import lombok.extern.slf4j.Slf4j;
+import static com.blockstats.commons.constants.ErrorCodes.SERVICE_ERROR_00001;
+import static com.blockstats.commons.constants.ErrorCodes.SERVICE_ERROR_00004;
+import static com.blockstats.commons.constants.ErrorCodes.SERVICE_ERROR_00005;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import com.blockstats.commons.exception.ForbiddenException;
+import com.blockstats.commons.exception.InsufficientPlanException;
+import com.blockstats.commons.exception.InvalidRequestException;
+import com.blockstats.commons.exception.NoDataFoundException;
+import com.blockstats.error.ErrorResponse;
+import com.blockstats.response.RecommendedPlanResponse;
 
-import static com.blockstats.commons.constants.ErrorCodes.*;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * This class handle all expected and unexpected exceptions thrown by
@@ -57,6 +63,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         errorResponse.setErrorDescription("Unable to retrieve User Details");
         errorResponse.setErrorMessages(List.of(forbiddenException.getMessage()));
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+    
+    @ExceptionHandler(InsufficientPlanException.class)
+    public final ResponseEntity<RecommendedPlanResponse> forbiddenException(InsufficientPlanException insufficientPlanException) {
+        log.debug(insufficientPlanException.getMessage());
+        RecommendedPlanResponse recommendedPlan = new RecommendedPlanResponse();
+        recommendedPlan.setName(insufficientPlanException.getName());
+        recommendedPlan.setPlanId(insufficientPlanException.getPlanId());
+        recommendedPlan.setCountry(insufficientPlanException.getCountry());
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(recommendedPlan);
     }
 
     @ExceptionHandler(Throwable.class)
