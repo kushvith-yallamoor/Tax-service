@@ -29,11 +29,9 @@ import lombok.extern.slf4j.Slf4j;
 public class RolePolicyCacheConfiguration {
 
     private final RolePolicyCacheProperties rolePolicyCacheProperties;
-    private final RolePolicyCacheLoaderService rolePolicyCacheLoaderService;
-    private final RolePolicySetCacheLoaderService rolePolicySetCacheLoaderService;
 
     @Bean(ROLE_POLICY_CACHE)
-    public LoadingCache<String, Map<String, RolePolicy>> rolePolicyCache() {
+    public LoadingCache<String, Map<String, RolePolicy>> rolePolicyCache(RolePolicyCacheLoaderService rolePolicyCacheLoaderService) {
         log.debug("Initializing SubscriptionEntity Plans Cache Bean");
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -43,7 +41,7 @@ public class RolePolicyCacheConfiguration {
     }
     
     @Bean(ROLE_POLICY_SET_CACHE)
-    public LoadingCache<String, Set<RolePolicy>> rolePolicySetCache() {
+    public LoadingCache<String, Set<RolePolicy>> rolePolicySetCache(RolePolicySetCacheLoaderService rolePolicySetCacheLoaderService) {
         log.debug("Initializing SubscriptionEntity Plans Set Cache Bean");
         ExecutorService executorService = Executors.newSingleThreadExecutor();
 

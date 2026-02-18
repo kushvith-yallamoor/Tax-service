@@ -8,10 +8,6 @@ import lombok.Setter;
 @Setter
 @Builder
 public class PaymentBO {
-
 	private long userType;
 	private String country;
-	private String correlationId;
-	private String requestDate;
-
 }

@@ -11,7 +11,9 @@ import static org.springframework.http.HttpStatus.OK;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
+import com.blockstats.commons.util.DateUtil;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
@@ -67,9 +69,9 @@ public class FetchRolePolicyDelegate {
                             return uriBuilder.build();
                         })
                         .header(AUTHORIZATION, "Bearer " + gcpIdTokenProvider.getIdToken(paymentServiceClientProperties.getBaseUrl()))
-                        .header(X_CORRELATION_ID, paymentBO.getCorrelationId())
+                        .header(X_CORRELATION_ID, UUID.randomUUID().toString())
                         .header(X_CLIENT_APP_ID, paymentServiceApiProperties.getClientAppId())
-                        .header(X_REQUEST_DATE, paymentBO.getRequestDate())
+                        .header(X_REQUEST_DATE, DateUtil.getCurrentDateInUTCFormat())
                         .exchangeToMono(clientResponse -> clientResponse.toEntity(String.class))
                         .block();
 

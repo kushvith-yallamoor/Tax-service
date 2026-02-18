@@ -1,21 +1,18 @@
 package com.blockstats.tax.cache;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
-
-import org.springframework.stereotype.Service;
-
-import com.blockstats.common.tax.bo.TaxBO;
 import com.blockstats.response.RolePolicy;
 import com.blockstats.response.RolePolicyResponse;
 import com.blockstats.tax.bo.PaymentBO;
 import com.blockstats.tax.delegate.FetchRolePolicyDelegate;
 import com.google.common.cache.CacheLoader;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -32,19 +29,9 @@ public class RolePolicyCacheLoaderService extends CacheLoader<String, Map<String
 
         log.debug("Loading active subscription plans for Type: {} and Country: {}", userType, country);
 
-        RolePolicyResponse rolePolicyResponse = fetchSubscriptionPlansDelegate.execute(PaymentBO.builder()
-        		.userType(userType)
-//        		.country(country)
-//        		.requestDate(new Date())
-        		.build());
+        RolePolicyResponse rolePolicyResponse = fetchSubscriptionPlansDelegate.execute(PaymentBO.builder().userType(userType).build());
 
-        return Objects.nonNull(rolePolicyResponse) ? 
-        		rolePolicyResponse.getRolePolicies().stream().collect(Collectors.toMap(
-        				RolePolicy::getRole,
-        	            value -> value,
-        	            (existing, replacement) -> replacement
-        	        ))
-        		: Map.of();
+        return Objects.nonNull(rolePolicyResponse) ? rolePolicyResponse.getRolePolicies().stream().collect(Collectors.toMap(RolePolicy::getRole, Function.identity(), (existing, replacement) -> replacement)) : Map.of();
     }
 
 
