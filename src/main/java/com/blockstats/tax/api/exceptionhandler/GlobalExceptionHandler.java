@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
@@ -55,9 +56,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
-    @ExceptionHandler(ForbiddenException.class)
-    public final ResponseEntity<ErrorResponse> forbiddenException(ForbiddenException forbiddenException) {
-        log.debug(forbiddenException.getMessage());
+    @ExceptionHandler({ForbiddenException.class, AuthorizationDeniedException.class})
+    public final ResponseEntity<ErrorResponse> forbiddenException(Exception forbiddenException) {
+        log.debug(forbiddenException.getMessage(), forbiddenException);
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setErrorCode(SERVICE_ERROR_00004);
         errorResponse.setErrorDescription("Unable to retrieve User Details");
@@ -77,7 +78,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Throwable.class)
     public final ResponseEntity<ErrorResponse> handleAllOthers(Throwable throwable) {
-        log.error(throwable.getMessage(), throwable.getCause());
+        log.error(throwable.getMessage(), throwable);
         ErrorResponse errorResponse = new ErrorResponse();
         errorResponse.setErrorCode(SERVICE_ERROR_00005);
         errorResponse.setErrorDescription("Internal Server Exception.");
