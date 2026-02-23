@@ -11,7 +11,6 @@ import com.blockstats.commons.exception.InvalidRequestException;
 import com.blockstats.commons.exception.RequestProcessingException;
 import com.blockstats.commons.exception.Violation;
 import com.blockstats.commons.stats.StatsCollector;
-import com.blockstats.commons.util.AuthUtil;
 import com.blockstats.enums.CostBasisType;
 import com.blockstats.enums.TrackingStatus;
 import com.blockstats.response.TaxResponse;
@@ -25,7 +24,6 @@ import com.blockstats.tax.service.TaxDocumentService;
 import com.blockstats.tax.service.TaxSummaryService;
 import com.blockstats.tax.service.UserSubscriptionValidationService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,12 +31,14 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.blockstats.commons.constants.HeaderConstants.*;
@@ -112,16 +112,19 @@ public class TaxController {
             log.debug("Tax Generation is already in progress");
             return ResponseEntity.status(201).body("Previous request for Tax summary generation is in progress");
         }
-        try {
-            this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.IN_PROGRESS);
+        
+        CompletableFuture.runAsync(() -> {
+        	this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.IN_PROGRESS);
             taxServiceFactory.getTaxService(getTaxBeanName(country)).refreshTaxSummary(taxBO);
-        } catch (Throwable throwable) {
-            log.error("Tax Generation failed", throwable);
+            this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.COMPLETED_SUCCESSFULLY);
+        })
+        .exceptionally(ex -> {
+        	log.error("Tax Generation failed:{}", ex.getMessage(), ex);
             this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.COMPLETED_WITH_ERRORS);
-            throw throwable;
-        }
-        this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.COMPLETED_SUCCESSFULLY);
-        return ResponseEntity.status(201).body("Tax summary generation is in progress");
+            return null;
+        });
+        
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body("Tax summary generation is in progress");
     }
 
     /**
