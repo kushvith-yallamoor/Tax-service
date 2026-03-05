@@ -4,6 +4,8 @@ import com.blockstats.common.mongo.userdata.delegate.repository.TransactionsRepo
 import com.blockstats.common.tax.bo.TaxBO;
 import com.blockstats.commons.api.authorization.bean.UserContext;
 import com.blockstats.commons.exception.*;
+import com.blockstats.response.RecommendedPlanResponse;
+import com.blockstats.response.RecommendedTaxPlanResponse;
 import com.blockstats.response.RolePolicy;
 import com.google.common.cache.LoadingCache;
 import lombok.AllArgsConstructor;
@@ -40,6 +42,7 @@ public class UserSubscriptionValidationService {
 
             // User transactions count
             long transactionCount = transactionsRepository.countDistinctGroupingIdByUserIdAndTxnDateBetween(userContext.getUserId(), taxBO.getFinancialYear().getStartDate(), taxBO.getFinancialYear().getEndDate()).blockOptional().orElse(0L);
+            taxBO.setUserTxnCount(transactionCount);
 
             // User role
             Set<String> roles = userContext.getRoles().stream().map(role -> role.replace("ROLE_", "")).filter(role -> !"TU".equals(role)).collect(Collectors.toSet());
@@ -48,22 +51,28 @@ public class UserSubscriptionValidationService {
 
                 // Check plan suggestion
                 Optional<RolePolicy> suggested = this.getSuggestedPlan(cacheKey, transactionCount);
-                throw new InsufficientPlanException(suggested.get().getName(),
-                        suggested.get().getPlanId(),
-                        suggested.get().getCountry(),
-                        transactionCount,
+                RecommendedPlanResponse recommendedPlan = new RecommendedPlanResponse();
+            	recommendedPlan.setName(suggested.get().getName());
+            	recommendedPlan.setCountry(suggested.get().getCountry());
+            	recommendedPlan.setPlanId(suggested.get().getPlanId());
+            	recommendedPlan.setUserTxnCount(transactionCount);
+                throw new InsufficientPlanException(
                         String.format("User has insufficient subscription plan based on their transactions:[%s-%s]",
-                                userContext.getUserId(), transactionCount));
+                                userContext.getUserId(), transactionCount),
+                        recommendedPlan);
             }
 
             if (isUpgradeRequired(subscriptionPlans, roles, transactionCount)) {
                 RolePolicy rolePolicy = this.getSuggestedPlan(cacheKey, transactionCount).get();
-                throw new InsufficientPlanException(rolePolicy.getName(),
-                        rolePolicy.getPlanId(),
-                        rolePolicy.getCountry(),
-                        transactionCount,
-                        String.format("User has insufficient subscription plan based on their transactions:[%s-%s]",
-                                userContext.getUserId(), transactionCount));
+                RecommendedPlanResponse recommendedPlan = new RecommendedPlanResponse();
+            	recommendedPlan.setName(rolePolicy.getName());
+            	recommendedPlan.setCountry(rolePolicy.getCountry());
+            	recommendedPlan.setPlanId(rolePolicy.getPlanId());
+            	recommendedPlan.setUserTxnCount(transactionCount);
+                throw new InsufficientPlanException(
+                        String.format("User has insufficient subscription plan based on their transactions:[%s-%s-%s-%s]",
+                                userContext.getUserId(), transactionCount, roles, rolePolicy.getPlanId()),
+                        recommendedPlan);
             }
         } catch (ExecutionException e) {
             log.error("Failed to load subscription plans from cache for key:{}", cacheKey, e);

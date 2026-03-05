@@ -23,7 +23,8 @@ import static com.blockstats.common.mongo.userdata.constants.UserdataMongoBeanNa
 @EnableReactiveMongoRepositories(basePackages = {"com.blockstats.common.tax.delegate.mongo.repository"}, reactiveMongoTemplateRef = USERDATA_REACTIVE_MONGO_TEMPLATE)
 @EnableConfigurationProperties({AppProperties.class, TrackingServiceApiProperties.class, TrackingServiceClientProperties.class,
         UserServiceClientProperties.class, UserServiceApiProperties.class, 
-        PaymentServiceApiProperties.class, PaymentServiceClientProperties.class, RolePolicyCacheProperties.class})
+        PaymentServiceApiProperties.class, PaymentServiceClientProperties.class, RolePolicyCacheProperties.class,
+        TaxRefreshThreadPoolProperties.class})
 @EnableAsync
 public class TaxServiceApplication {
 

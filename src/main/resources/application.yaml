@@ -56,6 +56,14 @@ blockstats:
 tax:
   app:
     tracking-service-topic: blockstats-tracking
+  refresh:
+    executor:
+      minThreads: 1
+      maxThreads: 10
+      keepAliveSeconds: 500
+      queueCapacity: 10000
+      awaitTerminationInMillis: 100000
+      threadNamePrefix: tax-refresh-
 # Dex pricing Configurations
 dex:
   enabled: true
