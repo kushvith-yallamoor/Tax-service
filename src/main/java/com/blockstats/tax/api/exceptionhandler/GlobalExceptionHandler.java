@@ -68,13 +68,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     
     @ExceptionHandler(InsufficientPlanException.class)
     public final ResponseEntity<RecommendedPlanResponse> forbiddenException(InsufficientPlanException insufficientPlanException) {
-        log.debug(insufficientPlanException.getMessage());
-        RecommendedPlanResponse recommendedPlan = new RecommendedPlanResponse();
-        recommendedPlan.setName(insufficientPlanException.getName());
-        recommendedPlan.setPlanId(insufficientPlanException.getPlanId());
-        recommendedPlan.setCountry(insufficientPlanException.getCountry());
-        recommendedPlan.setUserTxnCount(insufficientPlanException.getUserTxnCount());
-        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(recommendedPlan);
+        return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED).body(insufficientPlanException.getRecommendedPlanResponse());
     }
 
     @ExceptionHandler(Throwable.class)
