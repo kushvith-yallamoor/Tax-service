@@ -41,10 +41,7 @@ public class PubSubPublishDelegator {
                     .publish(this.appProperties.getTrackingServiceTopic(), pubsubMessage)
                     .get();
             log.debug("Reported Tracking Status as {}", trackingRequestDTO.getStatus());
-        } catch (InterruptedException e) {
-            log.error("Unable to publish walletDetails of user {}", trackingRequestDTO.getUserId(), e);
-            throw new RuntimeException(e);
-        } catch (ExecutionException e) {
+        } catch (InterruptedException | ExecutionException e) {
             log.error("Unable to publish walletDetails of user {}", trackingRequestDTO.getUserId(), e);
             throw new RuntimeException(e);
         }
