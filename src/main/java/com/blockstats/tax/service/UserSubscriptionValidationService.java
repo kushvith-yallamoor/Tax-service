@@ -5,7 +5,6 @@ import com.blockstats.common.tax.bo.TaxBO;
 import com.blockstats.commons.api.authorization.bean.UserContext;
 import com.blockstats.commons.exception.*;
 import com.blockstats.response.RecommendedPlanResponse;
-import com.blockstats.response.RecommendedTaxPlanResponse;
 import com.blockstats.response.RolePolicy;
 import com.google.common.cache.LoadingCache;
 import lombok.AllArgsConstructor;
@@ -45,17 +44,24 @@ public class UserSubscriptionValidationService {
             taxBO.setUserTxnCount(transactionCount);
 
             // User role
+            if(userContext.getRoles() == null) {
+            	log.error("No subscription plans found for the UserType:{} and Country:{}", userContext.getUserType(), taxBO.getCountry());
+        		// Check plan suggestion
+                Optional<RolePolicy> suggested = this.getSuggestedPlan(cacheKey, transactionCount);
+                RecommendedPlanResponse recommendedPlan = buildRecommendedPlanResponse(suggested.get(), transactionCount);
+                throw new InsufficientPlanException(
+                        String.format("User has insufficient subscription plan based on their transactions:[%s-%s]",
+                                userContext.getUserId(), transactionCount),
+                        recommendedPlan);
+        	}
+            
             Set<String> roles = userContext.getRoles().stream().map(role -> role.replace("ROLE_", "")).filter(role -> !"TU".equals(role)).collect(Collectors.toSet());
             if (CollectionUtils.isEmpty(roles)) {
                 log.error("No subscription plans found for the UserType:{} and Country:{}", userContext.getUserType(), taxBO.getCountry());
 
                 // Check plan suggestion
                 Optional<RolePolicy> suggested = this.getSuggestedPlan(cacheKey, transactionCount);
-                RecommendedPlanResponse recommendedPlan = new RecommendedPlanResponse();
-            	recommendedPlan.setName(suggested.get().getName());
-            	recommendedPlan.setCountry(suggested.get().getCountry());
-            	recommendedPlan.setPlanId(suggested.get().getPlanId());
-            	recommendedPlan.setUserTxnCount(transactionCount);
+                RecommendedPlanResponse recommendedPlan = buildRecommendedPlanResponse(suggested.get(), transactionCount);
                 throw new InsufficientPlanException(
                         String.format("User has insufficient subscription plan based on their transactions:[%s-%s]",
                                 userContext.getUserId(), transactionCount),
@@ -64,11 +70,7 @@ public class UserSubscriptionValidationService {
 
             if (isUpgradeRequired(subscriptionPlans, roles, transactionCount)) {
                 RolePolicy rolePolicy = this.getSuggestedPlan(cacheKey, transactionCount).get();
-                RecommendedPlanResponse recommendedPlan = new RecommendedPlanResponse();
-            	recommendedPlan.setName(rolePolicy.getName());
-            	recommendedPlan.setCountry(rolePolicy.getCountry());
-            	recommendedPlan.setPlanId(rolePolicy.getPlanId());
-            	recommendedPlan.setUserTxnCount(transactionCount);
+                RecommendedPlanResponse recommendedPlan = buildRecommendedPlanResponse(rolePolicy, transactionCount);
                 throw new InsufficientPlanException(
                         String.format("User has insufficient subscription plan based on their transactions:[%s-%s-%s-%s]",
                                 userContext.getUserId(), transactionCount, roles, rolePolicy.getPlanId()),
@@ -91,5 +93,14 @@ public class UserSubscriptionValidationService {
         // suggest next suitable plan
         return this.rolePolicySetCache.get(cacheKey).stream().filter(rolePolicy -> userTxnCount <= rolePolicy.getTxnCount()).findFirst();
     }
+    
+	private RecommendedPlanResponse buildRecommendedPlanResponse(RolePolicy rolePolicy, long transactionCount) {
+		RecommendedPlanResponse recommendedPlan = new RecommendedPlanResponse();
+		recommendedPlan.setName(rolePolicy.getName());
+		recommendedPlan.setCountry(rolePolicy.getCountry());
+		recommendedPlan.setPlanId(rolePolicy.getPlanId());
+		recommendedPlan.setUserTxnCount(transactionCount);
+		return recommendedPlan;
+	}
 
 }
