@@ -169,7 +169,13 @@ public class TaxController {
             });
         } catch (InsufficientPlanException e) {
         	taxServiceFactory.getTaxService(BASIC_TAX_SERVICE.concat(country)).refreshTaxSummary(taxBO);
-        	message = "Tax summary generation is completed";
+            RecommendedTaxPlanResponse recommendedPlan = new RecommendedTaxPlanResponse();
+            recommendedPlan.setName(e.getRecommendedPlanResponse().getName());
+            recommendedPlan.setCountry(e.getRecommendedPlanResponse().getCountry());
+            recommendedPlan.setPlanId(e.getRecommendedPlanResponse().getPlanId());
+            recommendedPlan.setUserTxnCount(e.getRecommendedPlanResponse().getUserTxnCount());
+            e.setRecommendedPlanResponse(recommendedPlan);
+            throw e;
 		}
         
         return ResponseEntity.status(HttpStatus.CREATED).body(message);
