@@ -119,6 +119,7 @@ public class TaxController {
         	recommendedPlan.setCostBasisValues(taxResponse.getTaxDetails().getCostBasisValues());
         	recommendedPlan.setPnl(taxResponse.getTaxDetails().getPnl());
         	recommendedPlan.setValidSubscription(taxResponse.isValidSubscription());
+        	recommendedPlan.setDocuments(taxResponse.getDocuments());
         	
         	e.setRecommendedPlanResponse(recommendedPlan);
         	throw e;
