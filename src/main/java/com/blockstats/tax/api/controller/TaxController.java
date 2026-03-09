@@ -96,7 +96,7 @@ public class TaxController {
      * @throws ExecutionException
      */
     @GetMapping
-    public ResponseEntity<TaxResponse> getTaxSummary(@RequestParam(name = "country") String country,
+    public ResponseEntity<TaxResponse> getTaxSummary(@RequestParam(name = "country", defaultValue = "USA", required = false) String country,
                                                      @RequestParam(name = "financialYear") String financialYear,
                                                      @RequestHeader HttpHeaders httpHeaders,
                                                      @AuthenticationPrincipal UserContext userContext) {
@@ -135,7 +135,7 @@ public class TaxController {
      * @throws ExecutionException
      */
     @GetMapping("/refresh")
-    public ResponseEntity<String> refreshTaxSummary(@RequestParam(name = "country") String country,
+    public ResponseEntity<String> refreshTaxSummary(@RequestParam(name = "country", defaultValue = "USA", required = false) String country,
                                                     @RequestParam(name = "financialYear") String financialYear,
                                                     @RequestHeader HttpHeaders httpHeaders,
                                                     @AuthenticationPrincipal UserContext userContext) {
@@ -191,7 +191,7 @@ public class TaxController {
      */
     @GetMapping("/document")
     @PreAuthorize("hasRole('ROLE_TU')")
-    public void downloadTaxDocument(@RequestParam(name = "country") String country,
+    public void downloadTaxDocument(@RequestParam(name = "country", defaultValue = "USA", required = false) String country,
                                     @RequestParam(name = "financialYear") String financialYear,
                                     @RequestParam(name = "documentName") String documentName,
                                     @RequestHeader HttpHeaders httpHeaders,
