@@ -204,7 +204,7 @@ public class TaxController {
     }
 
     @GetMapping("/financial-years")
-    public ResponseEntity<List<TaxFinancialYearDto>> getTaxFinancialYears(@RequestParam(name = "country") String country) {
+    public ResponseEntity<List<TaxFinancialYearDto>> getTaxFinancialYears(@RequestParam(name = "country", defaultValue = "USD", required = false) String country) {
         requestValidator.validateCountry(country);
         TaxConfigurationDto taxConfiguration = taxConfigurationService.getTaxConfiguration(country);
 
