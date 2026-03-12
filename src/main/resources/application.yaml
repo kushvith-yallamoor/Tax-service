@@ -58,8 +58,8 @@ tax:
     tracking-service-topic: blockstats-tracking
   refresh:
     executor:
-      minThreads: 1
-      maxThreads: 10
+      minThreads: 10
+      maxThreads: 20
       keepAliveSeconds: 500
       queueCapacity: 10000
       awaitTerminationInMillis: 100000

@@ -120,6 +120,7 @@ public class TaxController {
         	recommendedPlan.setPnl(taxResponse.getTaxDetails().getPnl());
         	recommendedPlan.setValidSubscription(taxResponse.isValidSubscription());
         	recommendedPlan.setDocuments(taxResponse.getDocuments());
+        	recommendedPlan.setUpdatedAt(taxResponse.getUpdatedAt());
         	
         	e.setRecommendedPlanResponse(recommendedPlan);
         	throw e;
@@ -174,6 +175,7 @@ public class TaxController {
             recommendedPlan.setCountry(e.getRecommendedPlanResponse().getCountry());
             recommendedPlan.setPlanId(e.getRecommendedPlanResponse().getPlanId());
             recommendedPlan.setUserTxnCount(e.getRecommendedPlanResponse().getUserTxnCount());
+            recommendedPlan.setUpdatedAt(new Date());
             e.setRecommendedPlanResponse(recommendedPlan);
             throw e;
 		}
