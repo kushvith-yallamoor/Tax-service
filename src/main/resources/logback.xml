@@ -41,7 +41,7 @@
     </appender>
 
     <root level="DEBUG">
-        <appender-ref ref="stdout"/>
+        <appender-ref ref="ASYNC_CONSOLE"/>
     </root>
     <logger name="com.blockstats" level="DEBUG" additivity="false">
         <appender-ref ref="ASYNC_CONSOLE"/>

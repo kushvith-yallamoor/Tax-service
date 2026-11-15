@@ -2,7 +2,7 @@
 tax:
   app:
     allowed-cross-origin-mapping: '/v1/**'
-    allowed-cross-origins: 'http://localhost:4545,https://frontend-web-uw6myk4s3a-uc.a.run.app,https://beta.blockstats.app'
+    allowed-cross-origins: '*'
 # Spring Configuration
 spring:
   config:
@@ -12,6 +12,14 @@ spring:
       project-id: dev-prj-frontend-apps
       credentials:
         location: 'classpath:application_default_credentials.json'
+      # The blockstats-tracking Pub/Sub topic lives in frontend-new-dev (this service's own
+      # Cloud Run project), not dev-prj-frontend-apps (the default above, used for
+      # Secret Manager/Storage). Without this override, every status publish
+      # (IN_PROGRESS/COMPLETED_SUCCESSFULLY/COMPLETED_WITH_ERRORS) fails with a
+      # Pub/Sub NOT_FOUND error that publishStatusSafely() swallows, leaving requests
+      # stuck at PUBLISHED forever regardless of whether the actual work succeeds.
+      pubsub:
+        project-id: frontend-new-dev
       secretmanager:
         project-id: dev-prj-frontend-apps
         credentials:
@@ -21,46 +29,58 @@ spring:
         bucket-name: dev-prj-frontend-apps-tax-reports
         credentials:
           location: 'classpath:application_default_credentials.json'
-# Mongo Configurations
+# Mongo Configurations - our own Atlas M0 cluster, hardcoded (no Secret Manager)
 blockstats:
   userdata:
     mongodb:
-      suffix: '?retryWrites=true&w=majority&appName=userdata-dev'
-      replicaSet: blockstats-dev.e4vcwlf.mongodb.net
-      userName: blockstats-dev
-      database: userdata-dev
+      suffix: '?retryWrites=true&w=majority'
+      replicaSet: blockstats-cluster-dsit.8lvidsf.mongodb.net
+      userName: blockstats-app
+      key: "Awdrgy45$$45qazwsxpoi"
+      database: userdata
   coinprices:
     mongodb:
-      suffix: '?retryWrites=true&w=majority&appName=blockstats-coinpricing'
-      replicaSet: blockstats-coinpricing.rtf55ca.mongodb.net
+      suffix: '?retryWrites=true&w=majority'
+      replicaSet: blockstats-cluster-dsit.8lvidsf.mongodb.net
       userName: blockstats-app
+      key: "Awdrgy45$$45qazwsxpoi"
       database: coin-pricing
 
 dex:
   client:
-    baseUrl: http://localhost:8091/blockstats/defipricing
+    baseUrl: https://defi-pricing-service-182856317969.us-central1.run.app/blockstats/defipricing
 
 wallet:
   client:
-    baseUrl: http://localhost:8092/blockstats/walletservice
+    baseUrl: https://wallet-service-182856317969.us-central1.run.app/blockstats/walletservice
 # Tracking Service HTTP Configurations
 tracking:
   httpclient:
-    baseUrl: https://tracking-service-594081517864.us-central1.run.app
+    baseUrl: https://tracking-service-182856317969.us-central1.run.app
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
 # User Service HTTP Configurations
 user:
   httpclient:
-    baseUrl: https://user-service-594081517864.us-central1.run.app
+    baseUrl: https://user-service-182856317969.us-central1.run.app
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
 # Payment Service HTTP Configurations
 payment:
   httpclient:
-    baseUrl: https://payment-service-594081517864.us-central1.run.app
+    baseUrl: https://payment-service-182856317969.us-central1.run.app
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
+# AI Service HTTP Configurations
+ai:
+  httpclient:
+    baseUrl: https://ai-service-182856317969.us-central1.run.app
+    defaultMaxPerRoute: 10
+    maxTotal: 10
+    ioThreadCount: 10
+  api:
+    label-resource: /blockstats/ai/v1/label/{chainName}/{txHash}
+    form1099-da-parse-resource: /blockstats/ai/v1/1099da/parse

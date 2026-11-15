@@ -2,6 +2,7 @@
 logging:
   level:
     com.blockstats: INFO
+    com.blockstats.common.mongo.delegate.AbstractUpsertDelegator: DEBUG
     root: ERROR
 #Server configurations
 server:
@@ -22,6 +23,10 @@ spring:
       pubsub:
         publisher:
           enable-message-ordering: true
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
 
 # Mongo Configurations
 blockstats:
@@ -56,6 +61,9 @@ blockstats:
 tax:
   app:
     tracking-service-topic: blockstats-tracking
+    # Temporary product decision: paywalls off, every user gets full access regardless of
+    # plan/role. Flip to true to re-enable the txn-count gate and AI-labeling quota cap.
+    plan-limits-enabled: false
   refresh:
     executor:
       minThreads: 10
@@ -133,6 +141,7 @@ user:
   api:
     client-app-id: Tax_Service
     user-service-resource: /blockstats/userservice/v1/user/preferences
+    accountant-access-check-resource: /blockstats/userservice/v1/accountant/access-check
 
 # Payment Service HTTP Configurations
 payment:
@@ -147,3 +156,4 @@ payment:
   api:
     client-app-id: Tax_Service
     rolePolicyResource: /blockstats/paymentservice/v1/subscriptionplans/roles
+    userSubscriptionResource: /blockstats/paymentservice/v1/users/subscriptions/active

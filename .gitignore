@@ -43,3 +43,5 @@ target/
 *.iws
 *.iml
 *.ipr
+# Never commit local GCP credentials
+application_default_credentials.json

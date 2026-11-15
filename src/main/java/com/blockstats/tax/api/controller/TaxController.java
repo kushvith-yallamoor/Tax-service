@@ -7,6 +7,7 @@ import com.blockstats.common.tax.factory.TaxServiceFactory;
 import com.blockstats.common.tax.service.TaxConfigurationService;
 import com.blockstats.commons.api.authorization.bean.UserContext;
 import com.blockstats.commons.constants.StatsConstants;
+import com.blockstats.commons.exception.ForbiddenException;
 import com.blockstats.commons.exception.InsufficientPlanException;
 import com.blockstats.commons.exception.InvalidRequestException;
 import com.blockstats.commons.exception.RequestProcessingException;
@@ -22,6 +23,7 @@ import com.blockstats.tax.api.validator.RequestValidator;
 import com.blockstats.tax.delegate.CreateInitialStatusRecordDelegate;
 import com.blockstats.tax.delegate.FetchUserPreferenceDelegate;
 import com.blockstats.tax.delegate.PubSubPublishDelegator;
+import com.blockstats.tax.properties.AppProperties;
 import com.blockstats.tax.service.TaxDocumentService;
 import com.blockstats.tax.service.TaxSummaryService;
 import com.blockstats.tax.service.UserSubscriptionValidationService;
@@ -35,7 +37,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -67,15 +68,19 @@ public class TaxController {
     private final PubSubPublishDelegator pubSubPublishDelegator;
     private final FetchUserPreferenceDelegate fetchUserPreferenceDelegate;
     private final UserSubscriptionValidationService userSubscriptionValidationService;
+    private final com.blockstats.tax.delegate.AccountantAccessCheckDelegate accountantAccessCheckDelegate;
     private final Executor executor;
-    
+    private final AppProperties appProperties;
+
     public TaxController(RequestValidator requestValidator, TaxServiceFactory taxServiceFactory,
 			TaxSummaryService taxSummaryService, TaxDocumentService taxDocumentService,
 			TaxConfigurationService taxConfigurationService,
 			CreateInitialStatusRecordDelegate createInitialStatusRecordDelegate,
 			PubSubPublishDelegator pubSubPublishDelegator, FetchUserPreferenceDelegate fetchUserPreferenceDelegate,
-			UserSubscriptionValidationService userSubscriptionValidationService, 
-			@Qualifier(TAX_REFRESH_THREAD_POOL) Executor executor) {
+			UserSubscriptionValidationService userSubscriptionValidationService,
+			com.blockstats.tax.delegate.AccountantAccessCheckDelegate accountantAccessCheckDelegate,
+			@Qualifier(TAX_REFRESH_THREAD_POOL) Executor executor,
+			AppProperties appProperties) {
 		this.requestValidator = requestValidator;
 		this.taxServiceFactory = taxServiceFactory;
 		this.taxSummaryService = taxSummaryService;
@@ -85,7 +90,9 @@ public class TaxController {
 		this.pubSubPublishDelegator = pubSubPublishDelegator;
 		this.fetchUserPreferenceDelegate = fetchUserPreferenceDelegate;
 		this.userSubscriptionValidationService = userSubscriptionValidationService;
+		this.accountantAccessCheckDelegate = accountantAccessCheckDelegate;
 		this.executor = executor;
+		this.appProperties = appProperties;
 	}
 
     /**
@@ -129,6 +136,32 @@ public class TaxController {
     }
 
     /**
+     * Read-only view of a CLIENT's already-computed tax summary, for an accountant with an
+     * ACTIVE link to that client (see AccountantController/AccountantClientService in
+     * user-service). Deliberately skips userSubscriptionValidationService.validate - that method
+     * validates the CALLER's own subscription tier/roles, which would be wrong here (an
+     * accountant on a free plan must still be able to view a paying client's already-unlocked
+     * data; there is no "upsell the accountant" concept for someone else's report).
+     */
+    @GetMapping("/accountant-view")
+    public ResponseEntity<TaxResponse> getClientTaxSummaryForAccountant(
+            @RequestParam(name = "clientUserId") String clientUserId,
+            @RequestParam(name = "country", defaultValue = "USA", required = false) String country,
+            @RequestParam(name = "financialYear") String financialYear,
+            @RequestHeader HttpHeaders httpHeaders,
+            @AuthenticationPrincipal UserContext userContext) {
+        if (!accountantAccessCheckDelegate.hasActiveAccess(userContext.getUserId(), clientUserId)) {
+            throw new ForbiddenException("You do not have access to this client's data");
+        }
+        this.setMDCInfo(httpHeaders, clientUserId, country);
+        StatsCollector.putInCurrentSession(StatsConstants.EVENT, "GET_TAX_SUMMARY_ACCOUNTANT_VIEW");
+        StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
+        requestValidator.validateFinancialYear(country, financialYear);
+        TaxResponse taxResponse = taxSummaryService.getTaxSummary(buildTaxBO(httpHeaders, clientUserId, country, financialYear));
+        return ResponseEntity.ok(taxResponse);
+    }
+
+    /**
      *
      * @param country
      * @param financialYear
@@ -159,15 +192,15 @@ public class TaxController {
             }
             
             CompletableFuture.runAsync(() -> {
-            	this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.IN_PROGRESS);
-                taxServiceFactory.getTaxService(SUBSCRIPTION_TAX_SERVICE.concat(country)).refreshTaxSummary(taxBO);
-                this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.COMPLETED_SUCCESSFULLY);
-            }, executor)
-            .exceptionally(ex -> {
-            	log.error("Subscription Tax Generation failed:{}", ex.getMessage(), ex);
-                this.pubSubPublishDelegator.execute(taxBO, TrackingStatus.COMPLETED_WITH_ERRORS);
-                return null;
-            });
+            	this.publishStatusSafely(taxBO, TrackingStatus.IN_PROGRESS);
+            	try {
+            		taxServiceFactory.getTaxService(SUBSCRIPTION_TAX_SERVICE.concat(country)).refreshTaxSummary(taxBO);
+            		this.publishStatusSafely(taxBO, TrackingStatus.COMPLETED_SUCCESSFULLY);
+            	} catch (Exception ex) {
+            		log.error("Subscription Tax Generation failed:{}", ex.getMessage(), ex);
+            		this.publishStatusSafely(taxBO, TrackingStatus.COMPLETED_WITH_ERRORS);
+            	}
+            }, executor);
         } catch (InsufficientPlanException e) {
         	taxServiceFactory.getTaxService(BASIC_TAX_SERVICE.concat(country)).refreshTaxSummary(taxBO);
             RecommendedTaxPlanResponse recommendedPlan = new RecommendedTaxPlanResponse();
@@ -192,13 +225,28 @@ public class TaxController {
      * @throws ExecutionException
      */
     @GetMapping("/document")
-    @PreAuthorize("hasRole('ROLE_TU')")
     public void downloadTaxDocument(@RequestParam(name = "country", defaultValue = "USA", required = false) String country,
                                     @RequestParam(name = "financialYear") String financialYear,
                                     @RequestParam(name = "documentName") String documentName,
                                     @RequestHeader HttpHeaders httpHeaders,
                                     @AuthenticationPrincipal UserContext userContext,
                                     HttpServletResponse response) {
+        // Was a static @PreAuthorize("hasRole('ROLE_TU')") - the one endpoint in the codebase that
+        // enforced its subscription/role gate independently of appProperties.isPlanLimitsEnabled(),
+        // the single flag every other paywall check here (UserSubscriptionValidationService,
+        // AITxnLabellingService) already respects. With plan-limits-enabled currently false
+        // (paywalls off, full access for everyone), that mismatch meant every download here still
+        // 403'd regardless of plan/role - including real, properly-subscribed accounts, since
+        // nothing ever grants a ROLE_TU claim while the flag is off. Gating on the same flag here
+        // too makes this endpoint consistent with the rest of the app, and re-enabling it later is
+        // the same single config flip that already re-arms the other two.
+        if (appProperties.isPlanLimitsEnabled()) {
+            boolean hasTaxUserRole = userContext.getRoles() != null && userContext.getRoles().stream()
+                    .anyMatch(role -> "TU".equals(role.replace("ROLE_", "")));
+            if (!hasTaxUserRole) {
+                throw new ForbiddenException("Downloading tax documents requires an active subscription.");
+            }
+        }
         this.setMDCInfo(httpHeaders, userContext.getUserId(), country);
         StatsCollector.putInCurrentSession(StatsConstants.EVENT, "DOWNLOAD_TAX_DOCUMENT");
         StatsCollector.putInCurrentSession(StatsConstants.FINANCIAL_YEAR, financialYear);
@@ -229,6 +277,14 @@ public class TaxController {
                 .toList();
 
         return ResponseEntity.ok(taxFinancialYears);
+    }
+
+    private void publishStatusSafely(TaxBO taxBO, TrackingStatus status) {
+        try {
+            this.pubSubPublishDelegator.execute(taxBO, status);
+        } catch (Exception e) {
+            log.error("Unable to publish tracking status {} for user {}", status, taxBO.getUserId(), e);
+        }
     }
 
     private TaxBO buildTaxBO(HttpHeaders headers, String userId, String country, String financialYear) {

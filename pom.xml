@@ -76,7 +76,7 @@
         <dependency>
             <groupId>com.blockstats</groupId>
             <artifactId>tax-service-usa</artifactId>
-            <version>${version}</version>
+            <version>1.0.0-LOCAL</version>
         </dependency>
 
     </dependencies>

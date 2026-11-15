@@ -6,6 +6,7 @@ import com.blockstats.commons.api.authorization.bean.UserContext;
 import com.blockstats.commons.exception.*;
 import com.blockstats.response.RecommendedPlanResponse;
 import com.blockstats.response.RolePolicy;
+import com.blockstats.tax.properties.AppProperties;
 import com.google.common.cache.LoadingCache;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,8 +26,12 @@ public class UserSubscriptionValidationService {
     private final LoadingCache<String, Map<String, RolePolicy>> rolePolicyCache;
     private final LoadingCache<String, Set<RolePolicy>> rolePolicySetCache;
     private final TransactionsRepository transactionsRepository;
+    private final AppProperties appProperties;
 
     public void validate(UserContext userContext, TaxBO taxBO) {
+        if (!appProperties.isPlanLimitsEnabled()) {
+            return;
+        }
         String cacheKey = String.format("%s:%s", userContext.getUserType(), taxBO.getCountry()).toUpperCase(Locale.ROOT);
         try {
             // All Roles

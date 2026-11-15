@@ -8,11 +8,15 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.blockstats.commons.exception.ForbiddenException;
@@ -43,6 +47,17 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errorResponse.setErrorMessages(invalidRequestException.getViolations().stream()
                     .map(violation -> violation.getName() + ":" + violation.getMessage()).collect(Collectors.toList()));
         }
+        return ResponseEntity.badRequest().body(errorResponse);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex,
+            HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        log.debug(ex.getMessage());
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setErrorCode(SERVICE_ERROR_00001);
+        errorResponse.setErrorDescription("Bad Request, Incorrect or Missing Information.");
+        errorResponse.setErrorMessages(List.of("This file is too large (max 20MB)."));
         return ResponseEntity.badRequest().body(errorResponse);
     }
 

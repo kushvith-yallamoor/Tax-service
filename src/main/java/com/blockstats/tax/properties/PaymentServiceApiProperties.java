@@ -10,4 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class PaymentServiceApiProperties {
     private String rolePolicyResource;
     private String clientAppId;
+    private String userSubscriptionResource;
 }

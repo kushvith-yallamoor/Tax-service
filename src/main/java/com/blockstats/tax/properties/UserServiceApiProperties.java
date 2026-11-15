@@ -10,4 +10,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class UserServiceApiProperties {
     private String userServiceResource;
     private String clientAppId;
+    private String accountantAccessCheckResource;
 }

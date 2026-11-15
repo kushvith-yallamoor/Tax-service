@@ -23,6 +23,7 @@ public class ApplicationSecurityConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthorizationRolesSetupFilter authorizationRolesSetupFilter) throws Exception {
         return http
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(httpSecuritySessionManagementConfigurer -> httpSecuritySessionManagementConfigurer.sessionCreationPolicy(STATELESS))
                 .authorizeHttpRequests(authorizeRequests ->
                         authorizeRequests

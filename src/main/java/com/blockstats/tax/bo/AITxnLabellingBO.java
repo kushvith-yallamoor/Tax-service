@@ -12,4 +12,6 @@ public class AITxnLabellingBO {
     private String clientAppId;
     private String requestDate;
     private String userId;
+    private long userType;
+    private java.util.Set<String> roles;
 }

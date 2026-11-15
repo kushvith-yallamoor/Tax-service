@@ -2,6 +2,7 @@ package com.blockstats.tax.configuration;
 
 import com.blockstats.commons.configuration.builder.HttpConnectionPoolBuilder;
 import com.blockstats.commons.configuration.builder.WebClientCreator;
+import com.blockstats.tax.properties.AiServiceClientProperties;
 import com.blockstats.tax.properties.PaymentServiceClientProperties;
 import com.blockstats.tax.properties.TrackingServiceClientProperties;
 import com.blockstats.tax.properties.UserServiceClientProperties;
@@ -50,6 +51,17 @@ public class ClientConfiguration {
     public WebClient createPaymentClient(@Qualifier(PAYMENT_CLIENT_CONN_POOL) PoolingAsyncClientConnectionManager connectionManager,
                                       PaymentServiceClientProperties paymentServiceClientProperties) {
         return WebClientCreator.createWebClient(paymentServiceClientProperties, connectionManager);
+    }
+
+    @Bean(AI_CLIENT_CONN_POOL)
+    public PoolingAsyncClientConnectionManager createAiHttpConnectionPool(AiServiceClientProperties aiServiceClientProperties) {
+        return HttpConnectionPoolBuilder.createPoolingAsyncClientConnectionManager(aiServiceClientProperties);
+    }
+
+    @Bean(AI_WEB_CLIENT)
+    public WebClient createAiClient(@Qualifier(AI_CLIENT_CONN_POOL) PoolingAsyncClientConnectionManager connectionManager,
+                                      AiServiceClientProperties aiServiceClientProperties) {
+        return WebClientCreator.createWebClient(aiServiceClientProperties, connectionManager);
     }
 
 }
