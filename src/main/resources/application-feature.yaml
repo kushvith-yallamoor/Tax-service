@@ -33,7 +33,7 @@ blockstats:
 
 dex:
   client:
-    baseUrl: https://defi-pricing-service-594081517864.us-central1.run.app/blockstats/defipricing
+    baseUrl: https://defi-pricing-service-182856317969.us-central1.run.app/blockstats/defipricing
 
 wallet:
   client:
@@ -41,21 +41,21 @@ wallet:
 # Tracking Service HTTP Configurations
 tracking:
   httpclient:
-    baseUrl: https://tracking-service-594081517864.us-central1.run.app
+    baseUrl: https://tracking-service-182856317969.us-central1.run.app
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
 # User Service HTTP Configurations
 user:
   httpclient:
-    baseUrl: https://user-service-594081517864.us-central1.run.app
+    baseUrl: https://user-service-182856317969.us-central1.run.app
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10
 # Payment Service HTTP Configurations
 payment:
   httpclient:
-    baseUrl: https://payment-service-594081517864.us-central1.run.app
+    baseUrl: https://payment-service-182856317969.us-central1.run.app
     defaultMaxPerRoute: 10
     maxTotal: 10
     ioThreadCount: 10

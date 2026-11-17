@@ -3,32 +3,16 @@ tax:
   app:
     allowed-cross-origin-mapping: '/v1/**'
     allowed-cross-origins: '*'
-# Spring Configuration
+# Spring Configuration - no Secret Manager, no other project: everything lives in frontend-new-dev
 spring:
-  config:
-    import: sm://
   cloud:
     gcp:
-      project-id: dev-prj-frontend-apps
-      credentials:
-        location: 'classpath:application_default_credentials.json'
-      # The blockstats-tracking Pub/Sub topic lives in frontend-new-dev (this service's own
-      # Cloud Run project), not dev-prj-frontend-apps (the default above, used for
-      # Secret Manager/Storage). Without this override, every status publish
-      # (IN_PROGRESS/COMPLETED_SUCCESSFULLY/COMPLETED_WITH_ERRORS) fails with a
-      # Pub/Sub NOT_FOUND error that publishStatusSafely() swallows, leaving requests
-      # stuck at PUBLISHED forever regardless of whether the actual work succeeds.
+      project-id: frontend-new-dev
       pubsub:
         project-id: frontend-new-dev
-      secretmanager:
-        project-id: dev-prj-frontend-apps
-        credentials:
-          location: 'classpath:application_default_credentials.json'
       storage:
-        project-id: dev-prj-frontend-apps
-        bucket-name: dev-prj-frontend-apps-tax-reports
-        credentials:
-          location: 'classpath:application_default_credentials.json'
+        project-id: frontend-new-dev
+        bucket-name: blockstats-static-assets
 # Mongo Configurations - our own Atlas M0 cluster, hardcoded (no Secret Manager)
 blockstats:
   userdata:
@@ -40,8 +24,8 @@ blockstats:
       database: userdata
   coinprices:
     mongodb:
-      suffix: '?retryWrites=true&w=majority'
-      replicaSet: blockstats-cluster-dsit.8lvidsf.mongodb.net
+      suffix: '?retryWrites=true&w=majority&appName=blockstats-coinpricing'
+      replicaSet: blockstats-coinpricing.rtf55ca.mongodb.net
       userName: blockstats-app
       key: "Awdrgy45$$45qazwsxpoi"
       database: coin-pricing

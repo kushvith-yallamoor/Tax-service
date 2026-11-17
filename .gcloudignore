@@ -1,0 +1,12 @@
+.git
+.gitignore
+src/
+*.md
+.idea/
+.vscode/
+target/*-sources.jar
+target/classes/
+target/generated-sources/
+target/maven-archiver/
+target/maven-status/
+target/test-classes/

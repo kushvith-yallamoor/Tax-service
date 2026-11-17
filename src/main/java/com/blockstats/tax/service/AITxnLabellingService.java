@@ -48,6 +48,11 @@ public class AITxnLabellingService {
             LocalTxnType.INTERNALTRANSFER, LocalTxnType.TRANSFER,
             LocalTxnType.TRANSFER_IN, LocalTxnType.TRANSFER_OUT);
 
+    // One of the literal labels ai-service's prompt offers (VertexAIDelegate) - matched
+    // case-insensitively since the prompt also lets the model "pick another suitable label if
+    // none fit", so the returned text isn't guaranteed to match this constant's exact case.
+    private static final String AI_LABEL_AIRDROP = "Airdrop";
+
     // Chains ai-service actually has RPC/decode config for (ai-service's ChainProperties - see
     // application.yaml there). ai-service's whole pipeline is EVM-specific (method signatures,
     // event logs via Alchemy); a chain not in this list either has no RPC config at all (fails
@@ -169,6 +174,7 @@ public class AITxnLabellingService {
                         .sourceType(SourceType.valueOf(transactionEntity.getSourceType()))
                         .source(Source.valueOf(transactionEntity.getSource()))
                         .build();
+        Boolean taxable = this.parseTaxable(aiResponse.getTaxable());
         TransactionTxnType transactionTxnType =
                 TransactionTxnType
                         .builder()
@@ -181,12 +187,31 @@ public class AITxnLabellingService {
                         .txnId(transactionEntity.getTxnId())
                         .aiTxnType(aiTxnType)
                         .aiTxnReason(aiResponse.getReason())
-                        .taxable(this.parseTaxable(aiResponse.getTaxable()))
+                        .taxable(taxable)
+                        .localTxnType(this.resolveReclassifiedLocalTxnType(aiTxnType, taxable))
                         .build();
         log.info("AI_LABEL_WRITE userId={} source={} sourceType={} txnId={} aiTxnType={}",
                 transactionEntity.getUserId(), transactionEntity.getSource(), transactionEntity.getSourceType(),
                 transactionEntity.getTxnId(), aiTxnType);
         transactionsTxnTypeUpsertDelegate.upsert(userContext, List.of(transactionTxnType));
+    }
+
+    // Reclassifies localTxnType (not just aiTxnType) only for the one AI label this engine
+    // actually has a confirmed, IRS-settled tax treatment for: an airdrop received is ordinary
+    // income at fair market value on receipt (Rev. Rul. 2019-24), the same confident-income
+    // treatment REWARD/STAKING_REWARD already get. Other free-text AI labels (Swap, NFT Mint,
+    // Bridge In, etc.) are left as aiTxnType-only - their tax treatment is either already
+    // resolved by other code paths (e.g. the DEX taxable-transfer override in
+    // AbstractCostBasisCalculator) or genuinely unresolved IRS guidance (see the compliance
+    // audit's Section 4), so reclassifying localTxnType for those would be a guess, not a fix.
+    // Only reclassifies when AI itself marked the transaction taxable - an "Airdrop" label with
+    // taxable=false (e.g. a promotional token with no established market, no dominion/control
+    // yet) should not be forced into an ordinary-income bucket.
+    private String resolveReclassifiedLocalTxnType(String aiTxnType, Boolean taxable) {
+        if (AI_LABEL_AIRDROP.equalsIgnoreCase(aiTxnType) && Boolean.TRUE.equals(taxable)) {
+            return LocalTxnType.AIRDROP.name();
+        }
+        return null;
     }
 
     /**
